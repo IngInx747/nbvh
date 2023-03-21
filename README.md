@@ -1,7 +1,7 @@
 # N-dimensional Bvh
 
 ## Ray tracer
-![Alt text](dragon.png?raw=true "ray-tracer")
+![Ray tracer](dragon.png?raw=true "ray-tracer")
 
 ## Visualizer
-![Alt text](dragon.bvh.png.png?raw=true "visualizer")
+![Visualizer](dragon.bvh.png?raw=true "visualizer")
