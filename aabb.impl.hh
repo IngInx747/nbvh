@@ -1,0 +1,282 @@
+// ======================================================================== //
+// Copyright (c) 2022 Ingram Inxent                                         //
+//                                                                          //
+// Permission is hereby granted, free of charge, to any person obtaining    //
+// a copy of this software and associated documentation files (the          //
+// "Software"), to deal in the Software without restriction, including      //
+// without limitation the rights to use, copy, modify, merge, publish,      //
+// distribute, sublicense, and/or sell copies of the Software, and to       //
+// permit persons to whom the Software is furnished to do so, subject to    //
+// the following conditions:                                                //
+//                                                                          //
+// The above copyright notice and this permission notice shall be           //
+// included in all copies or substantial portions of the Software.          //
+//                                                                          //
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,          //
+// EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF       //
+// MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND                    //
+// NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE   //
+// LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION   //
+// OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION    //
+// WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.          //
+// ======================================================================== //
+
+#ifndef AXIS_ALIGNED_BOUNDING_BOX_IMPL_HH
+#define AXIS_ALIGNED_BOUNDING_BOX_IMPL_HH
+
+#include "aabb.hh"
+
+////////////////////////////////////////////////////////////////
+/// AABB impl utilities
+////////////////////////////////////////////////////////////////
+
+template <typename T, size_t N, typename Indices = std::make_index_sequence<N>>
+inline bool operator<(const VectorN<T, N> &a, const VectorN<T, N> &b)
+{ return op_impl_dot<T, N, bool>(a, b, [] (bool r, T x, T y) { return r && x < y; }, true, Indices{}); }
+
+template <typename T, size_t N, typename Indices = std::make_index_sequence<N>>
+inline bool operator<=(const VectorN<T, N> &a, const VectorN<T, N> &b)
+{ return op_impl_dot<T, N, bool>(a, b, [] (bool r, T x, T y) { return r && x <= y; }, true, Indices{}); }
+
+template <typename T, size_t N, typename... R>
+inline VectorN<T, N> max(const VectorN<T, N> &a, const VectorN<T, N> &b, const VectorN<R, N> &... rest)
+{ return max(max(a, b), rest...); }
+
+template <typename T, size_t N, typename... R>
+inline VectorN<T, N> min(const VectorN<T, N> &a, const VectorN<T, N> &b, const VectorN<R, N> &... rest)
+{ return min(min(a, b), rest...); }
+
+////////////////////////////////////////////////////////////////
+/// AABB boolean impls
+////////////////////////////////////////////////////////////////
+
+template <typename T, size_t N>
+inline bool is_valid(const Aabb<T, N> &b)
+{ return b.p[0] <= b.p[1]; }
+
+template <typename T, size_t N>
+inline bool is_valid(const Aabb<T, N> &b, bool _)
+{ return b.p[0] < b.p[1]; }
+
+template <typename T, size_t N>
+inline bool is_inside(const Aabb<T, N> &b, const VectorN<T, N> &v)
+{ return b.p[0] <= v && v <= b.p[1]; }
+
+template <typename T, size_t N>
+inline bool is_inside(const Aabb<T, N> &b, const VectorN<T, N> &v, bool _)
+{ return b.p[0] < v && v < b.p[1]; }
+
+template <typename T, size_t N>
+inline bool is_inside(const Aabb<T, N> &b_I, const Aabb<T, N> &b_i)
+{ return b_I.p[0] <= b_i.p[0] && b_i.p[1] <= b_I.p[1]; }
+
+template <typename T, size_t N>
+inline bool is_inside(const Aabb<T, N> &b_I, const Aabb<T, N> &b_i, bool _)
+{ return b_I.p[0] < b_i.p[0] && b_i.p[1] < b_I.p[1]; }
+
+template <typename T, size_t N>
+inline bool is_intersecting(const Aabb<T, N> &b_0, const Aabb<T, N> &b_1)
+{ return b_0.p[0] <= b_1.p[1] && b_1.p[0] <= b_0.p[1]; }
+
+template <typename T, size_t N>
+inline bool is_intersecting(const Aabb<T, N> &b_0, const Aabb<T, N> &b_1, bool _)
+{ return b_0.p[0] < b_1.p[1] && b_1.p[0] < b_0.p[1]; }
+
+// * If we can rely on the IEEE 754 floating-point properties,
+// this also implicitly handles the edge case where a component
+// of the direction is zero - the tx0 and tx1 values (for example)
+// will be infinities of opposite sign if the ray is within the slabs,
+// thus leaving t0 and t1 unchanged.
+// If the ray is outside the slabs, tx0 and tx1 will be infinities
+// with the same sign, thus making t0 == +inf or t1 == -inf,
+// and causing the test to fail.
+// * As AABB is not the entity in space, its intersect test does not
+// update distance.
+
+template <typename T, size_t N>
+inline bool is_intersecting(const Aabb<T, N> &b, const VectorN<T, N> &org, const VectorN<T, N> &dir, const T &dist)
+{
+    const VectorN<T, N> t0 = (b.p[0] - org) / dir;
+    const VectorN<T, N> t1 = (b.p[1] - org) / dir;
+    const T k0 = max(min(t0, t1));
+    const T k1 = min(max(t0, t1));
+    return k1 > 0 && k1 >= k0 && dist > k0;
+}
+
+template <typename T, size_t N>
+inline bool is_intersecting(const Aabb<T, N> &b, const VectorN<T, N> &org, const VectorN<T, N> &inv, const T &dist, bool _)
+{
+    const VectorN<T, N> t0 = (b.p[0] - org) * inv;
+    const VectorN<T, N> t1 = (b.p[1] - org) * inv;
+    const T k0 = max(min(t0, t1));
+    const T k1 = min(max(t0, t1));
+    return k1 > 0 && k1 >= k0 && dist > k0;
+}
+
+////////////////////////////////////////////////////////////////
+/// AABB property impls
+////////////////////////////////////////////////////////////////
+
+template <typename T, size_t N>
+inline VectorN<T, N> centroid(const Aabb<T, N> &b)
+{ return (b.p[0] + b.p[1]) * (T)(0.5); }
+
+template <typename T, size_t N>
+inline VectorN<T, N> diagonal(const Aabb<T, N> &b)
+{ return b.p[1] - b.p[0]; }
+
+template <typename T, size_t N>
+inline T component(const Aabb<T, N> &b, size_t dim)
+{ return diagonal(b)[dim]; }
+
+template <typename T, size_t N>
+inline T max_component(const Aabb<T, N> &b)
+{ return max(diagonal(b)); }
+
+template <typename T, size_t N>
+inline size_t longest_axis(const Aabb<T, N> &b)
+{ return argmax(diagonal(b)); }
+
+template <typename T, size_t N, typename Indices = std::make_index_sequence<N>>
+inline T volume(const Aabb<T, N> &b)
+{ return op_impl_rdc<T, N>(diagonal(b), [] (T x, T y) { return x * y; }, (T)1, Indices{}); }
+
+////////////////////////////////////////////////////////////////
+/// AABB operation impls
+////////////////////////////////////////////////////////////////
+
+template <typename T, size_t N>
+inline Aabb<T, N> merge(const Aabb<T, N> &b_0, const Aabb<T, N> &b_1)
+{ return { min(b_0.p[0], b_1.p[0]), max(b_0.p[1], b_1.p[1]) }; }
+
+template <typename T, size_t N>
+inline Aabb<T, N> intersect(const Aabb<T, N> &b_0, const Aabb<T, N> &b_1)
+{ return { max(b_0.p[0], b_1.p[0]), min(b_0.p[1], b_1.p[1]) }; }
+
+////////////////////////////////////////////////////////////////
+/// AABB ctors
+////////////////////////////////////////////////////////////////
+
+#include <numeric>
+
+template <typename T, size_t N>
+inline Aabb<T, N> make_aabb()
+{ return { make_vector<T, N>(+std::numeric_limits<T>::max()), make_vector<T, N>(-std::numeric_limits<T>::max()) }; }
+
+template <typename T, size_t N>
+inline Aabb<T, N> make_aabb(const VectorN<T, N> &v)
+{ return { v, v }; }
+
+template <typename T, size_t N, typename... R>
+inline Aabb<T, N> make_aabb(const VectorN<T, N> &v, const VectorN<R, N> &... vs)
+{ return { min(v, vs...), max(v, vs...) }; }
+
+////////////////////////////////////////////////////////////////
+/// 3D AABB ctors
+////////////////////////////////////////////////////////////////
+
+//template <typename T>
+//inline Aabb<T, 3> make_aabb(const T &x, const T &y, const T &z)
+//{
+//    return {
+//        VectorN<T, 3> { x, y, z },
+//        VectorN<T, 3> { x, y, z }};
+//}
+
+//template <typename T>
+//inline Aabb<T, 3> make_aabb(
+//    const T &x0, const T &y0, const T &z0,
+//    const T &x1, const T &y1, const T &z1)
+//{
+//    return {
+//        min(VectorN<T, 3> { x0, y0, z0 }, VectorN<T, 3> { x1, y1, z1 }),
+//        max(VectorN<T, 3> { x0, y0, z0 }, VectorN<T, 3> { x1, y1, z1 })};
+//}
+
+//template <typename T>
+//inline Aabb<T, 3> make_aabb(
+//    const T &x0, const T &y0, const T &z0,
+//    const T &x1, const T &y1, const T &z1,
+//    const T &x2, const T &y2, const T &z2)
+//{
+//    return {
+//        min(VectorN<T, 3> { x0, y0, z0 }, VectorN<T, 3> { x1, y1, z1 }, VectorN<T, 3> { x2, y2, z2 }),
+//        max(VectorN<T, 3> { x0, y0, z0 }, VectorN<T, 3> { x1, y1, z1 }, VectorN<T, 3> { x2, y2, z2 })};
+//}
+
+////////////////////////////////////////////////////////////////
+/// 3D AABB boolean impls
+////////////////////////////////////////////////////////////////
+
+//template <typename T>
+//inline bool is_intersecting(
+//    const Aabb<T, 3> &b,
+//    const T &ox, const T &oy, const T &oz,
+//    const T &dx, const T &dy, const T &dz,
+//    const T &dist)
+//{
+//    T t0 = Aabb<T>::kInfN, t1 = Aabb<T>::kInfP;
+//
+//    T tx0 = (b.p[0][0] - ox) / dx;
+//    T tx1 = (b.p[1][0] - ox) / dx;
+//
+//    t0 = std::max(t0, std::min(tx0, tx1));
+//    t1 = std::min(t1, std::max(tx0, tx1));
+//
+//    T ty0 = (b.p[0][1] - oy) / dy;
+//    T ty1 = (b.p[1][1] - oy) / dy;
+//
+//    t0 = std::max(t0, std::min(ty0, ty1));
+//    t1 = std::min(t1, std::max(ty0, ty1));
+//
+//    T tz0 = (b.p[0][2] - oz) / dz;
+//    T tz1 = (b.p[1][2] - oz) / dz;
+//
+//    t0 = std::max(t0, std::min(tz0, tz1));
+//    t1 = std::min(t1, std::max(tz0, tz1));
+//
+//    return t1 > 0 && t1 >= t0 && dist > t0;
+//}
+
+//template <typename T>
+//inline bool is_intersecting(
+//    const Aabb<T, 3> &b,
+//    const T &ox, const T &oy, const T &oz,
+//    const T &dx, const T &dy, const T &dz,
+//    const T &dist, bool _)
+//{
+//    T t0 = Aabb<T>::kInfN, t1 = Aabb<T>::kInfP;
+//
+//    T tx0 = (b.p[0][0] - ox) * dx;
+//    T tx1 = (b.p[1][0] - ox) * dx;
+//
+//    t0 = std::max(t0, std::min(tx0, tx1));
+//    t1 = std::min(t1, std::max(tx0, tx1));
+//
+//    T ty0 = (b.p[0][1] - oy) * dy;
+//    T ty1 = (b.p[1][1] - oy) * dy;
+//
+//    t0 = std::max(t0, std::min(ty0, ty1));
+//    t1 = std::min(t1, std::max(ty0, ty1));
+//
+//    T tz0 = (b.p[0][2] - oz) * dz;
+//    T tz1 = (b.p[1][2] - oz) * dz;
+//
+//    t0 = std::max(t0, std::min(tz0, tz1));
+//    t1 = std::min(t1, std::max(tz0, tz1));
+//
+//    return t1 > 0 && t1 >= t0 && dist > t0;
+//}
+
+////////////////////////////////////////////////////////////////
+/// 3D AABB property impls
+////////////////////////////////////////////////////////////////
+
+template <typename T>
+inline T area(const Aabb<T, 3> &b)
+{
+    VectorN<T, 3> d = diagonal(b);
+    return (d[0] * d[1] + d[0] * d[2] + d[1] * d[2]) * (T)2;
+}
+
+#endif // AXIS_ALIGNED_BOUNDING_BOX_IMPL_HH

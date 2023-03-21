@@ -1,0 +1,7 @@
+cmake_minimum_required(VERSION 3.5.0)
+project(bounding-volume-hierarchy)
+add_subdirectory(3rdparty)
+add_subdirectory(test_aabb)
+add_subdirectory(test_bvh)
+add_subdirectory(ray_tracer)
+add_subdirectory(obj_viewer)

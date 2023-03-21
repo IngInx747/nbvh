@@ -1,0 +1,72 @@
+#include "aabb.hh"
+
+using Vec3 = VectorN<double, 3>;
+using Box3 = Aabb<double, 3>;
+
+int main(int argc, const char **argv)
+{
+    Vec3 v0 {  0, 0, 0 };
+    Vec3 v1 { -1,-1,-1 };
+    Vec3 v2 {  1,-1,-1 };
+    Vec3 v3 { -1, 1,-1 };
+    Vec3 v4 {  1, 1,-1 };
+    Vec3 v5 { -1,-1, 1 };
+    Vec3 v6 {  1,-1, 1 };
+    Vec3 v7 { -1, 1, 1 };
+    Vec3 v8 {  1, 1, 1 };
+    Box3 bn = make_aabb<double, 3>();
+    Box3 bo = make_aabb<double, 3>(v8);
+    Box3 b0 = make_aabb<double, 3>(v1, v2, v3, v4, v5, v6, v7, v8);
+    Box3 b1 = make_aabb<double, 3>(v0, v1);
+    Box3 b2 = make_aabb<double, 3>(v0, v2);
+    Box3 b3 = make_aabb<double, 3>(v0, v3);
+    Box3 b4 = make_aabb<double, 3>(v0, v4);
+    Box3 b5 = make_aabb<double, 3>(v0, v5);
+    Box3 b6 = make_aabb<double, 3>(v0, v6);
+    Box3 b7 = make_aabb<double, 3>(v0, v7);
+    Box3 b8 = make_aabb<double, 3>(v0, v8);
+    std::cout << b0.p[0] << ", " << b0.p[1] << ", vol = " << volume(b0) << ", mid = " << centroid(b0) << std::endl;
+    std::cout << b1.p[0] << ", " << b1.p[1] << ", vol = " << volume(b1) << ", mid = " << centroid(b1) << std::endl;
+    std::cout << b2.p[0] << ", " << b2.p[1] << ", vol = " << volume(b2) << ", mid = " << centroid(b2) << std::endl;
+    std::cout << b3.p[0] << ", " << b3.p[1] << ", vol = " << volume(b3) << ", mid = " << centroid(b3) << std::endl;
+    std::cout << b4.p[0] << ", " << b4.p[1] << ", vol = " << volume(b4) << ", mid = " << centroid(b4) << std::endl;
+    std::cout << b5.p[0] << ", " << b5.p[1] << ", vol = " << volume(b5) << ", mid = " << centroid(b5) << std::endl;
+    std::cout << b6.p[0] << ", " << b6.p[1] << ", vol = " << volume(b6) << ", mid = " << centroid(b6) << std::endl;
+    std::cout << b7.p[0] << ", " << b7.p[1] << ", vol = " << volume(b7) << ", mid = " << centroid(b7) << std::endl;
+    std::cout << b8.p[0] << ", " << b8.p[1] << ", vol = " << volume(b8) << ", mid = " << centroid(b8) << std::endl;
+    std::cout << bo.p[0] << ", " << bo.p[1] << ", vol = " << volume(bo) << ", mid = " << centroid(bo) << std::endl;
+    std::cout << "valid(bn) = " << is_valid(bn) << std::endl;
+    std::cout << "valid(b0) = " << is_valid(b0) << std::endl;
+    std::cout << "valid(bo) = " << is_valid(bo) << std::endl;
+    std::cout << "valid(bo) ex = " << is_valid(bo, true) << std::endl;
+    std::cout << "is v0 inside b0 = " << is_inside(b0, v0) << std::endl;
+    std::cout << "is v0 inside b0 ex = " << is_inside(b0, v0, true) << std::endl;
+    std::cout << "is v1 inside b1 = " << is_inside(b1, v0) << std::endl;
+    std::cout << "is v1 inside b1 ex = " << is_inside(b1, v0, true) << std::endl;
+    std::cout << "is b1 inside b0 = " << is_inside(b0, b1) << std::endl;
+    std::cout << "is b1 inside b0 ex = " << is_inside(b0, b1, true) << std::endl;
+    std::cout << "is b1 intersecting b8 = " << is_intersecting(b1, b8) << std::endl;
+    std::cout << "is b1 intersecting b8 ex = " << is_intersecting(b1, b8, true) << std::endl;
+    std::cout << "max component (b1,b2) = " << max_component(merge(b1, b2)) << ", axis = " << longest_axis(merge(b1, b2)) << std::endl;
+    std::cout << "max component (b1,b3) = " << max_component(merge(b1, b3)) << ", axis = " << longest_axis(merge(b1, b3)) << std::endl;
+    std::cout << "max component (b1,b4) = " << max_component(merge(b1, b4)) << ", axis = " << longest_axis(merge(b1, b4)) << std::endl;
+    std::cout << "max component (b1,b5) = " << max_component(merge(b1, b5)) << ", axis = " << longest_axis(merge(b1, b5)) << std::endl;
+    std::cout << "max component (b1,b8) = " << max_component(merge(b1, b8)) << ", axis = " << longest_axis(merge(b1, b8)) << std::endl;
+    std::cout << "valid(b1 & b8) = " << is_valid(intersect(b1, b8)) << ", exclusively = " << is_valid(intersect(b1, b8), true) << std::endl;
+    //Vec3 d1 = normalize(Vec3 { 1,0,0 });
+    //Vec3 d2 = normalize(Vec3 { 1,1,0 });
+    //Vec3 d3 = normalize(Vec3 { 1,1,1 });
+    std::cout << "is ray intersecting box = " << is_intersecting(b8, { -1,-1,-1 }, { 1,0,0 }, 1e10) << std::endl;
+    std::cout << "is ray intersecting box = " << is_intersecting(b8, { -1,-1,-1 }, { 1,1,0 }, 1e10) << std::endl;
+    std::cout << "is ray intersecting box = " << is_intersecting(b8, { -1,-1,-1 }, { 1,1,1 }, 1e10) << std::endl;
+    std::cout << "is ray intersecting box = " << is_intersecting(b8, v0, { 1,0,0 }, 1e10) << std::endl;
+    std::cout << "is ray intersecting box = " << is_intersecting(b8, v0, { 1,1,0 }, 1e10) << std::endl;
+    std::cout << "is ray intersecting box = " << is_intersecting(b8, v0, { 1,1,1 }, 1e10) << std::endl;
+    std::cout << "is ray intersecting box = " << is_intersecting(b8, { 1,1,1 }, { 1,0,0 }, 1e10) << std::endl;
+    std::cout << "is ray intersecting box = " << is_intersecting(b8, { 1,1,1 }, { 1,1,0 }, 1e10) << std::endl;
+    std::cout << "is ray intersecting box = " << is_intersecting(b8, { 1,1,1 }, { 1,1,1 }, 1e10) << std::endl;
+    std::cout << "is ray intersecting box = " << is_intersecting(b8, {  0,-1,-1 }, { 1,1,1 }, 1e10) << std::endl;
+    std::cout << "is ray intersecting box = " << is_intersecting(b8, { -1, 0,-1 }, { 1,1,1 }, 1e10) << std::endl;
+    std::cout << "is ray intersecting box = " << is_intersecting(b8, { -1,-1, 0 }, { 1,1,1 }, 1e10) << std::endl;
+    return 0;
+}
