@@ -172,103 +172,6 @@ inline Aabb<T, N> make_aabb(const VectorN<T, N> &v, const VectorN<R, N> &... vs)
 { return { min(v, vs...), max(v, vs...) }; }
 
 ////////////////////////////////////////////////////////////////
-/// 3D AABB ctors
-////////////////////////////////////////////////////////////////
-
-//template <typename T>
-//inline Aabb<T, 3> make_aabb(const T &x, const T &y, const T &z)
-//{
-//    return {
-//        VectorN<T, 3> { x, y, z },
-//        VectorN<T, 3> { x, y, z }};
-//}
-
-//template <typename T>
-//inline Aabb<T, 3> make_aabb(
-//    const T &x0, const T &y0, const T &z0,
-//    const T &x1, const T &y1, const T &z1)
-//{
-//    return {
-//        min(VectorN<T, 3> { x0, y0, z0 }, VectorN<T, 3> { x1, y1, z1 }),
-//        max(VectorN<T, 3> { x0, y0, z0 }, VectorN<T, 3> { x1, y1, z1 })};
-//}
-
-//template <typename T>
-//inline Aabb<T, 3> make_aabb(
-//    const T &x0, const T &y0, const T &z0,
-//    const T &x1, const T &y1, const T &z1,
-//    const T &x2, const T &y2, const T &z2)
-//{
-//    return {
-//        min(VectorN<T, 3> { x0, y0, z0 }, VectorN<T, 3> { x1, y1, z1 }, VectorN<T, 3> { x2, y2, z2 }),
-//        max(VectorN<T, 3> { x0, y0, z0 }, VectorN<T, 3> { x1, y1, z1 }, VectorN<T, 3> { x2, y2, z2 })};
-//}
-
-////////////////////////////////////////////////////////////////
-/// 3D AABB boolean impls
-////////////////////////////////////////////////////////////////
-
-//template <typename T>
-//inline bool is_intersecting(
-//    const Aabb<T, 3> &b,
-//    const T &ox, const T &oy, const T &oz,
-//    const T &dx, const T &dy, const T &dz,
-//    const T &dist)
-//{
-//    T t0 = Aabb<T>::kInfN, t1 = Aabb<T>::kInfP;
-//
-//    T tx0 = (b.p[0][0] - ox) / dx;
-//    T tx1 = (b.p[1][0] - ox) / dx;
-//
-//    t0 = std::max(t0, std::min(tx0, tx1));
-//    t1 = std::min(t1, std::max(tx0, tx1));
-//
-//    T ty0 = (b.p[0][1] - oy) / dy;
-//    T ty1 = (b.p[1][1] - oy) / dy;
-//
-//    t0 = std::max(t0, std::min(ty0, ty1));
-//    t1 = std::min(t1, std::max(ty0, ty1));
-//
-//    T tz0 = (b.p[0][2] - oz) / dz;
-//    T tz1 = (b.p[1][2] - oz) / dz;
-//
-//    t0 = std::max(t0, std::min(tz0, tz1));
-//    t1 = std::min(t1, std::max(tz0, tz1));
-//
-//    return t1 > 0 && t1 >= t0 && dist > t0;
-//}
-
-//template <typename T>
-//inline bool is_intersecting(
-//    const Aabb<T, 3> &b,
-//    const T &ox, const T &oy, const T &oz,
-//    const T &dx, const T &dy, const T &dz,
-//    const T &dist, bool _)
-//{
-//    T t0 = Aabb<T>::kInfN, t1 = Aabb<T>::kInfP;
-//
-//    T tx0 = (b.p[0][0] - ox) * dx;
-//    T tx1 = (b.p[1][0] - ox) * dx;
-//
-//    t0 = std::max(t0, std::min(tx0, tx1));
-//    t1 = std::min(t1, std::max(tx0, tx1));
-//
-//    T ty0 = (b.p[0][1] - oy) * dy;
-//    T ty1 = (b.p[1][1] - oy) * dy;
-//
-//    t0 = std::max(t0, std::min(ty0, ty1));
-//    t1 = std::min(t1, std::max(ty0, ty1));
-//
-//    T tz0 = (b.p[0][2] - oz) * dz;
-//    T tz1 = (b.p[1][2] - oz) * dz;
-//
-//    t0 = std::max(t0, std::min(tz0, tz1));
-//    t1 = std::min(t1, std::max(tz0, tz1));
-//
-//    return t1 > 0 && t1 >= t0 && dist > t0;
-//}
-
-////////////////////////////////////////////////////////////////
 /// 3D AABB property impls
 ////////////////////////////////////////////////////////////////
 
@@ -277,6 +180,17 @@ inline T area(const Aabb<T, 3> &b)
 {
     VectorN<T, 3> d = diagonal(b);
     return (d[0] * d[1] + d[0] * d[2] + d[1] * d[2]) * (T)2;
+}
+
+////////////////////////////////////////////////////////////////
+/// 2D AABB property impls
+////////////////////////////////////////////////////////////////
+
+template <typename T>
+inline T area(const Aabb<T, 2> &b)
+{
+    VectorN<T, 2> d = diagonal(b);
+    return (d[0] + d[1]) * (T)2;
 }
 
 #endif // AXIS_ALIGNED_BOUNDING_BOX_IMPL_HH

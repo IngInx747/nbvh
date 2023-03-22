@@ -331,7 +331,7 @@ MiddlePointSplit<Primitive, PrimitiveBound, T, N>::operator()(
 
 /// Split Method: SAH
 /// Partition primitives via surface area heuristic
-template<class Primitive, class PrimitiveBound, typename T, size_t N = 3>
+template<class Primitive, class PrimitiveBound, typename T, size_t N>
 struct SAHSplit
 {
     SAHSplit(const PrimitiveBound &bound) : bound(bound) {}

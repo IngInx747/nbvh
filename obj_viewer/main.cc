@@ -202,7 +202,7 @@ int main(int argc, const char **argv)
     TriangleBound bound(vs, fs); {
     //EqualCountsSplit<int, TriangleBound, double, 3> split(bound);
     //MiddlePointSplit<int, TriangleBound, double, 3> split(bound);
-    SAHSplit<int, TriangleBound, double> split(bound);
+    SAHSplit<int, TriangleBound, double, 3> split(bound);
     std::vector<int> fids {}; for (int i=0; i<fs.size(); ++i) fids.push_back(i);
     bvh.build<TriangleBound, decltype(split)>(fids, bound, split, 1); }
 
