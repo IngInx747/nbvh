@@ -13,8 +13,8 @@
 
 struct TriangleBound
 {
-	TriangleBound(const std::vector<Vec3> &vs, const std::vector<Int3> &fs): vs(vs), fs(fs) {}
-	inline Box3 operator() (int fid) const;
+    TriangleBound(const std::vector<Vec3> &vs, const std::vector<Int3> &fs): vs(vs), fs(fs) {}
+    inline Box3 operator() (int fid) const;
     const std::vector<Vec3> &vs;
     const std::vector<Int3> &fs;
 };
@@ -26,49 +26,49 @@ inline Box3 TriangleBound::operator()(int fid) const
 }
 
 inline bool is_intersecting(
-	const Vec3 &v0,
-	const Vec3 &v1,
-	const Vec3 &v2,
-	const Vec3 &org,
-	const Vec3 &dir,
-	double &dist,
-	bool culling)
+    const Vec3 &v0,
+    const Vec3 &v1,
+    const Vec3 &v2,
+    const Vec3 &org,
+    const Vec3 &dir,
+    double &dist,
+    bool culling)
 {
-	constexpr double kEps = std::numeric_limits<double>::epsilon();
+    constexpr double kEps = std::numeric_limits<double>::epsilon();
 
-	auto v01 = v1 - v0;
-	auto v02 = v2 - v0;
-	auto pvc = cross(dir, v02); // T
-	double det = dot(v01, pvc); // ((P1, V02, V01))
+    auto v01 = v1 - v0;
+    auto v02 = v2 - v0;
+    auto pvc = cross(dir, v02); // T
+    double det = dot(v01, pvc); // ((P1, V02, V01))
 
-	if (culling && det < 0) return false;
-	if (!culling && std::abs(det) < kEps) return false;
+    if (culling && det < 0) return false;
+    if (!culling && std::abs(det) < kEps) return false;
 
-	double inv = 1 / det;
-	auto tvc = org - v0; // P0 - V0
-	double u = dot(tvc, pvc) * inv; // Eq.3
-	if (u < 0 || u > 1) return false;
+    double inv = 1 / det;
+    auto tvc = org - v0; // P0 - V0
+    double u = dot(tvc, pvc) * inv; // Eq.3
+    if (u < 0 || u > 1) return false;
 
-	auto qvc = cross(tvc, v01); // S
-	double v = dot(dir, qvc) * inv; // Eq.4
-	if (v < 0 || u + v > 1) return false;
+    auto qvc = cross(tvc, v01); // S
+    double v = dot(dir, qvc) * inv; // Eq.4
+    if (v < 0 || u + v > 1) return false;
 
-	// distance from ray.origin to hit point
-	double t = dot(v02, qvc) * inv; // Eq.5
+    // distance from ray.origin to hit point
+    double t = dot(v02, qvc) * inv; // Eq.5
 
-	// update hit distance
-	if (t > 0 && dist > t)
-	{
-		dist = t;
-		return true; // ray hit primitive in distance
-	}
-	else return false; // ray hit primitive out of distance
+    // update hit distance
+    if (t > 0 && dist > t)
+    {
+        dist = t;
+        return true; // ray hit primitive in distance
+    }
+    else return false; // ray hit primitive out of distance
 }
 
 struct TriangleCollide
 {
-	TriangleCollide(const std::vector<Vec3> &vs, const std::vector<Int3> &fs): vs(vs), fs(fs) {}
-	inline bool operator() (int fid, const Vec3 &org, const Vec3 &dir, double &dist) const;
+    TriangleCollide(const std::vector<Vec3> &vs, const std::vector<Int3> &fs): vs(vs), fs(fs) {}
+    inline bool operator() (int fid, const Vec3 &org, const Vec3 &dir, double &dist) const;
     const std::vector<Vec3> &vs;
     const std::vector<Int3> &fs;
     mutable int fc { -1 };
@@ -218,9 +218,9 @@ int main(int argc, const char **argv)
     if (!window) { glfwTerminate(); exit(EXIT_FAILURE); }
 
     glfwSetKeyCallback(window, keyboard_callback);
-	glfwSetScrollCallback(window, cursor_scroll_callback);
+    glfwSetScrollCallback(window, cursor_scroll_callback);
     glfwSetCursorPosCallback(window, cursor_move_callback);
-	glfwSetMouseButtonCallback(window, cursor_press_callback);
+    glfwSetMouseButtonCallback(window, cursor_press_callback);
     glfwSetFramebufferSizeCallback(window, window_resize_callback);
 
     glfwMakeContextCurrent(window);
