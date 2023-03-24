@@ -161,7 +161,7 @@ protected:
 ///     const PrimitiveBound &bound,
 ///     int threshold)
 /// {
-///     SAHSplit<Primitive, PrimitiveBound, T> split(bound);
+///     SAHSplit<Primitive, PrimitiveBound, T, N> split(bound);
 ///     bvh.build<PrimitiveBound, decltype(split)>(
 ///         primitives.begin(), primitives.end(),
 ///         bound, split, threshold);
