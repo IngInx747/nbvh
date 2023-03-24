@@ -52,35 +52,35 @@ inline VectorN<T, N> min(const VectorN<T, N> &a, const VectorN<T, N> &b, const V
 
 template <typename T, size_t N>
 inline bool is_valid(const Aabb<T, N> &b)
-{ return b.p[0] <= b.p[1]; }
+{ return b[0] <= b[1]; }
 
 template <typename T, size_t N>
 inline bool is_valid(const Aabb<T, N> &b, bool _)
-{ return b.p[0] < b.p[1]; }
+{ return b[0] < b[1]; }
 
 template <typename T, size_t N>
 inline bool is_inside(const Aabb<T, N> &b, const VectorN<T, N> &v)
-{ return b.p[0] <= v && v <= b.p[1]; }
+{ return b[0] <= v && v <= b[1]; }
 
 template <typename T, size_t N>
 inline bool is_inside(const Aabb<T, N> &b, const VectorN<T, N> &v, bool _)
-{ return b.p[0] < v && v < b.p[1]; }
+{ return b[0] < v && v < b[1]; }
 
 template <typename T, size_t N>
 inline bool is_inside(const Aabb<T, N> &b_I, const Aabb<T, N> &b_i)
-{ return b_I.p[0] <= b_i.p[0] && b_i.p[1] <= b_I.p[1]; }
+{ return b_I[0] <= b_i[0] && b_i[1] <= b_I[1]; }
 
 template <typename T, size_t N>
 inline bool is_inside(const Aabb<T, N> &b_I, const Aabb<T, N> &b_i, bool _)
-{ return b_I.p[0] < b_i.p[0] && b_i.p[1] < b_I.p[1]; }
+{ return b_I[0] < b_i[0] && b_i[1] < b_I[1]; }
 
 template <typename T, size_t N>
 inline bool is_intersecting(const Aabb<T, N> &b_0, const Aabb<T, N> &b_1)
-{ return b_0.p[0] <= b_1.p[1] && b_1.p[0] <= b_0.p[1]; }
+{ return b_0[0] <= b_1[1] && b_1[0] <= b_0[1]; }
 
 template <typename T, size_t N>
 inline bool is_intersecting(const Aabb<T, N> &b_0, const Aabb<T, N> &b_1, bool _)
-{ return b_0.p[0] < b_1.p[1] && b_1.p[0] < b_0.p[1]; }
+{ return b_0[0] < b_1[1] && b_1[0] < b_0[1]; }
 
 // * If we can rely on the IEEE 754 floating-point properties,
 // this also implicitly handles the edge case where a component
@@ -96,8 +96,8 @@ inline bool is_intersecting(const Aabb<T, N> &b_0, const Aabb<T, N> &b_1, bool _
 template <typename T, size_t N>
 inline bool is_intersecting(const Aabb<T, N> &b, const VectorN<T, N> &org, const VectorN<T, N> &dir, const T &dist)
 {
-    const VectorN<T, N> t0 = (b.p[0] - org) / dir;
-    const VectorN<T, N> t1 = (b.p[1] - org) / dir;
+    const VectorN<T, N> t0 = (b[0] - org) / dir;
+    const VectorN<T, N> t1 = (b[1] - org) / dir;
     const T k0 = max(min(t0, t1));
     const T k1 = min(max(t0, t1));
     return k1 > 0 && k1 >= k0 && dist > k0;
@@ -106,8 +106,8 @@ inline bool is_intersecting(const Aabb<T, N> &b, const VectorN<T, N> &org, const
 template <typename T, size_t N>
 inline bool is_intersecting(const Aabb<T, N> &b, const VectorN<T, N> &org, const VectorN<T, N> &inv, const T &dist, bool _)
 {
-    const VectorN<T, N> t0 = (b.p[0] - org) * inv;
-    const VectorN<T, N> t1 = (b.p[1] - org) * inv;
+    const VectorN<T, N> t0 = (b[0] - org) * inv;
+    const VectorN<T, N> t1 = (b[1] - org) * inv;
     const T k0 = max(min(t0, t1));
     const T k1 = min(max(t0, t1));
     return k1 > 0 && k1 >= k0 && dist > k0;
@@ -119,11 +119,11 @@ inline bool is_intersecting(const Aabb<T, N> &b, const VectorN<T, N> &org, const
 
 template <typename T, size_t N>
 inline VectorN<T, N> centroid(const Aabb<T, N> &b)
-{ return (b.p[0] + b.p[1]) * (T)(0.5); }
+{ return (b[0] + b[1]) * (T)(0.5); }
 
 template <typename T, size_t N>
 inline VectorN<T, N> diagonal(const Aabb<T, N> &b)
-{ return b.p[1] - b.p[0]; }
+{ return b[1] - b[0]; }
 
 template <typename T, size_t N>
 inline T component(const Aabb<T, N> &b, size_t dim)
@@ -147,11 +147,11 @@ inline T volume(const Aabb<T, N> &b)
 
 template <typename T, size_t N>
 inline Aabb<T, N> merge(const Aabb<T, N> &b_0, const Aabb<T, N> &b_1)
-{ return { min(b_0.p[0], b_1.p[0]), max(b_0.p[1], b_1.p[1]) }; }
+{ return { min(b_0[0], b_1[0]), max(b_0[1], b_1[1]) }; }
 
 template <typename T, size_t N>
 inline Aabb<T, N> intersect(const Aabb<T, N> &b_0, const Aabb<T, N> &b_1)
-{ return { max(b_0.p[0], b_1.p[0]), min(b_0.p[1], b_1.p[1]) }; }
+{ return { max(b_0[0], b_1[0]), min(b_0[1], b_1[1]) }; }
 
 ////////////////////////////////////////////////////////////////
 /// AABB ctors

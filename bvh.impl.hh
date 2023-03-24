@@ -311,7 +311,7 @@ MiddlePointSplit<Primitive, PrimitiveBound, T, N>::operator()(
         cbox = merge(cbox, bound(*iter));
     const auto dim = longest_axis(cbox);
 
-    T mid = (cbox.p[0][dim] + cbox.p[1][dim]) * (T)(0.5);
+    T mid = (cbox[0][dim] + cbox[1][dim]) * (T)(0.5);
 
     auto miter = std::partition(biter, eiter, [&](const Primitive &p)
     { return centroid(bound(p))[dim] < mid; });
@@ -360,7 +360,7 @@ SAHSplit<Primitive, PrimitiveBound, T, N>::operator()(
 
     for (auto iter = biter; iter != eiter; ++iter)
     {
-        auto offset = (centroid(bound(*iter)) - cbox.p[0]) / diagonal(cbox);
+        auto offset = (centroid(bound(*iter)) - cbox[0]) / diagonal(cbox);
         int b = static_cast<int>(nBuckets * offset[dim]);
         if (b == nBuckets) b = nBuckets - 1;
         boxes[b] = merge(boxes[b], bound(*iter));
@@ -401,7 +401,7 @@ SAHSplit<Primitive, PrimitiveBound, T, N>::operator()(
     // split according to the SAH result
     auto siter = std::partition(biter, eiter, [&](const Primitive &p)
     {
-        auto offset = (centroid(bound(p)) - cbox.p[0]) / diagonal(cbox);
+        auto offset = (centroid(bound(p)) - cbox[0]) / diagonal(cbox);
         int b = static_cast<int>(nBuckets * offset[dim]);
         if (b == nBuckets) b = nBuckets - 1;
         return b <= splitBucketId;
