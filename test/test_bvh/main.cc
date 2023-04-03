@@ -109,7 +109,7 @@ int main(int argc, const char **argv)
     //MiddlePointSplit<int, TriangleBound, double, 3> split(bound);
     SAHSplit<int, TriangleBound, double, 3> split(bound);
     std::vector<int> fids {}; for (int i=0; i<fs.size(); ++i) fids.push_back(i);
-    bvh.build<TriangleBound, decltype(split)>(fids, bound, split, 1); }
+    bvh.build(fids, bound, split, 1); }
 
     TriangleCollide collide(vs, fs);
     double dist { 1e10 };
