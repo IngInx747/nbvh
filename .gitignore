@@ -265,19 +265,3 @@ paket-files/
 __pycache__/
 *.pyc
 /Z
-
-# 3rd party library runtimes
-!3rdparty/freeglut/bin
-!3rdparty/freeglut/bin/x64
-
-# data set
-#!data/*.obj
-#!data/**/*.obj
-
-# mesh format
-data/**
-*.obj
-*.stl
-*.mesh
-*.poly
-*.mtr
