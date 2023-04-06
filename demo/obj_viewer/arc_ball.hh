@@ -1,9 +1,9 @@
 #ifndef ARC_BALL_H
 #define ARC_BALL_H
 
-#include <glm/glm.hpp>
-#include <glm/gtc/quaternion.hpp>
-#include <glm/gtx/quaternion.hpp>
+#include <glm.hpp>
+#include <gtc/quaternion.hpp>
+#include <gtx/quaternion.hpp>
 
 class ArcBall
 {

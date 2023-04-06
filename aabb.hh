@@ -24,7 +24,7 @@
 #ifndef AXIS_ALIGNED_BOUNDING_BOX_HH
 #define AXIS_ALIGNED_BOUNDING_BOX_HH
 
-#include "vector_n.hh"
+#include "nvec/nvec.hh"
 
 ////////////////////////////////////////////////////////////////
 /// Axis-aligned Bounding Box
