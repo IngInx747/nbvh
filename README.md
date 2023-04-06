@@ -44,7 +44,7 @@ bvh.build(data.begin(), data.end(), bound, split, 1);
 Setup your searching range.
 
 ```cpp
-struct Range
+struct MyQueryRange
 {
     bool operator() (const BvhN&) const
     { /* rough query: check if your searching range hit any box(faster) */ }
@@ -59,9 +59,9 @@ struct Range
 Search BVH within the range.
 
 ```cpp
-Range query(/* some initializations */);
+MyQueryRange range(/* some initializations */);
 
-if (bvh.search(query))
+if (bvh.search(range))
 { /* do something */ }
 ```
 
