@@ -24,7 +24,7 @@ struct MyBoundMethod
 };
 ```
 
-Select a box-splitting method for BVH. Currently 3 built-in methods(Middle-point, Equal counts and SAH) are provided.
+Select a box-splitting method for BVH. There are provided with 3 built-in methods(Middle-point, Equal counts and SAH).
 
 ```cpp
 MyBoundMethod bound(/* some initializations */);
