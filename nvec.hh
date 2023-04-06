@@ -1,5 +1,5 @@
 // ======================================================================== //
-// Copyright (c) 2022 Ingram Inxent                                         //
+// Copyright (c) 2023 Ingram Inxent                                         //
 //                                                                          //
 // Permission is hereby granted, free of charge, to any person obtaining    //
 // a copy of this software and associated documentation files (the          //
@@ -21,27 +21,29 @@
 // WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.          //
 // ======================================================================== //
 
-#ifndef AXIS_ALIGNED_BOUNDING_BOX_HH
-#define AXIS_ALIGNED_BOUNDING_BOX_HH
-
-#include "nvec.hh"
+#ifndef N_DIMENSIONAL_VECTOR_HH
+#define N_DIMENSIONAL_VECTOR_HH
 
 ////////////////////////////////////////////////////////////////
-/// Axis-aligned Bounding Box
+/// Nd vector
 ////////////////////////////////////////////////////////////////
 
 template <typename T, size_t N>
-struct Aabb
+struct VectorN
 {
     typedef T value_type;
-    typedef VectorN<T, N> type;
 
-    const VectorN<T, N> &operator[](size_t i) const { return p[i]; }
-    VectorN<T, N> &operator[](size_t i) { return p[i]; }
+    static constexpr size_t size() noexcept { return N; }
 
-    VectorN<T, N> p[2]; // p_min, p_max
+    const T &operator[](size_t i) const { return v[i]; }
+    T &operator[](size_t i) { return v[i]; }
+
+    operator const T *() const { return &v[0]; }
+    operator T *() { return &v[0]; }
+
+    T v[N] {0};
 };
 
-#endif // !AXIS_ALIGNED_BOUNDING_BOX_HH
+#endif // N_DIMENSIONAL_VECTOR_HH
 
-#include "aabb.impl.hh"
+#include "nvec.impl.hh"

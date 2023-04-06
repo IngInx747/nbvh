@@ -1,7 +1,3 @@
-[submodule "nvec"]
-	active = true
-	path = nvec
-	url = https://github.com/IngInx747/nvec.git
 [submodule "glfw"]
 	active = false
 	shallow = true
