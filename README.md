@@ -7,9 +7,9 @@
 Define the data type and dimension of your bounding box.
 
 ```cpp
-using Primitive = /**/;
-using BoxN = Aabb<T, N>;
+using Primitive = /* point, triangle, sphere, etc. */;
 using BvhN = Bvh<Primitive, T, N>;
+using BoxN = Aabb<T, N>;
 ```
 
 Tell BVH how to create the bounding box per primitive.
