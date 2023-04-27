@@ -94,7 +94,7 @@ if (bvh.intersect(collide, org, dir, dist))
 
 ## Demo
 <p float="left">
-    <img src="https://github.com/IngInx747/nbvh-demo/master/dragon.png" width=256 height=256 />
-    <img src="https://github.com/IngInx747/nbvh-demo/master/dragon.bvh.png" width=256 height=256 />
-    <img src="https://github.com/IngInx747/nbvh-demo/master/dragon.leaf.png" width=256 height=256 />
+    <img src="https://github.com/IngInx747/nbvh-demo/blob/master/dragon.png" width=256 height=256 />
+    <img src="https://github.com/IngInx747/nbvh-demo/blob/master/dragon.bvh.png" width=256 height=256 />
+    <img src="https://github.com/IngInx747/nbvh-demo/blob/master/dragon.leaf.png" width=256 height=256 />
 </p>
