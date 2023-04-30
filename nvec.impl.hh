@@ -202,7 +202,7 @@ inline VectorN<T, N> operator-(const VectorN<T, N> &p, const T &s)
 
 template <typename T, size_t N, typename Indices = std::make_index_sequence<N>>
 inline VectorN<T, N> operator-(const T &s, const VectorN<T, N> &p)
-{ return op_impl_sub(p, s, Indices{}); }
+{ return op_impl_neg(op_impl_sub(p, s, Indices{}), Indices{}); }
 
 template <typename T, size_t N, typename Indices = std::make_index_sequence<N>>
 inline VectorN<T, N> operator*(const VectorN<T, N> &a, const VectorN<T, N> &b)
