@@ -96,21 +96,21 @@ inline bool is_intersecting(const Aabb<T, N> &b_0, const Aabb<T, N> &b_1, bool _
 template <typename T, size_t N>
 inline bool is_intersecting(const Aabb<T, N> &b, const VectorN<T, N> &org, const VectorN<T, N> &dir, const T &dist)
 {
-    const VectorN<T, N> t0 = (b[0] - org) / dir;
-    const VectorN<T, N> t1 = (b[1] - org) / dir;
-    const T k0 = max(min(t0, t1));
-    const T k1 = min(max(t0, t1));
-    return k1 > 0 && k1 >= k0 && dist > k0;
+    const VectorN<T, N> k0 = (b[0] - org) / dir;
+    const VectorN<T, N> k1 = (b[1] - org) / dir;
+    const T t0 = max(min(k0, k1));
+    const T t1 = min(max(k0, k1));
+    return t1 > 0 && t1 >= k0 && dist > t0;
 }
 
 template <typename T, size_t N>
 inline bool is_intersecting(const Aabb<T, N> &b, const VectorN<T, N> &org, const VectorN<T, N> &inv, const T &dist, bool _)
 {
-    const VectorN<T, N> t0 = (b[0] - org) * inv;
-    const VectorN<T, N> t1 = (b[1] - org) * inv;
-    const T k0 = max(min(t0, t1));
-    const T k1 = min(max(t0, t1));
-    return k1 > 0 && k1 >= k0 && dist > k0;
+    const VectorN<T, N> k0 = (b[0] - org) * inv;
+    const VectorN<T, N> k1 = (b[1] - org) * inv;
+    const T t0 = max(min(k0, k1));
+    const T t1 = min(max(k0, k1));
+    return t1 > 0 && t1 >= t0 && dist > t0;
 }
 
 ////////////////////////////////////////////////////////////////
