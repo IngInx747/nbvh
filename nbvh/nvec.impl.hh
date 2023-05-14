@@ -31,7 +31,7 @@
 #endif
 
 ////////////////////////////////////////////////////////////////
-/// Nd vector internal implementations
+/// Nd vector internals
 ////////////////////////////////////////////////////////////////
 
 #include <utility> // std::index_sequence
@@ -121,7 +121,7 @@ inline Stream &op_impl_out(Stream &os, const VectorN<T, N>& p, const char *sep, 
 //{ using _ = int[]; size_t k {}; (void)_{ (k = p[k] > p[I] ? I : k, 0)... }; return k; }
 
 ////////////////////////////////////////////////////////////////
-/// Nd vector utilities
+/// Nd vector generic internals
 ////////////////////////////////////////////////////////////////
 
 template <typename T, size_t N, size_t... I>
@@ -177,7 +177,27 @@ inline size_t op_impl_arg(const VectorN<T, N> &p, bool (*cmp)(T, T), std::index_
 { using _ = int[]; size_t k {}; (void)_{ (k = cmp(p[k], p[I]) ? I : k, 0)... }; return k; }
 
 ////////////////////////////////////////////////////////////////
-/// Nd vector Ops
+/// Nd vector ctors
+////////////////////////////////////////////////////////////////
+
+template <typename T, size_t N, typename Indices = std::make_index_sequence<N>>
+inline VectorN<T, N> make_vector(const T &s)
+{ return op_impl_set<T, N>(s, Indices{}); }
+
+template <typename T, size_t N, size_t M, typename Indices = std::make_index_sequence<N>>
+inline VectorN<T, N> make_vector(const VectorN<T, M> &p)
+{ return op_impl_set<T, N, M>(p, Indices{}); }
+
+template <typename T, size_t N, typename Indices = std::make_index_sequence<N>>
+inline VectorN<T, N> make_vector(const VectorN<T, N> &p, T (*fun)(T))
+{ return op_impl_uop<T, N>(p, fun, Indices{}); }
+
+template <typename T, size_t N, typename R, typename Indices = std::make_index_sequence<N>>
+inline VectorN<R, N> make_vector(const VectorN<T, N> &p, R (*fun)(T))
+{ return op_impl_uop<T, N, R>(p, fun, Indices{}); }
+
+////////////////////////////////////////////////////////////////
+/// Nd vector basic operations
 ////////////////////////////////////////////////////////////////
 
 template <typename T, size_t N, typename Indices = std::make_index_sequence<N>>
@@ -260,6 +280,13 @@ template <typename T, size_t N, typename Indices = std::make_index_sequence<N>>
 inline T dot(const VectorN<T, N> &a, const VectorN<T, N> &b)
 { return op_impl_dot(a, b, Indices{}); }
 
+////////////////////////////////////////////////////////////////
+/// Nd vector extended operations
+////////////////////////////////////////////////////////////////
+
+#include <cmath>
+#include <iostream>
+
 template <typename T, size_t N, typename Indices = std::make_index_sequence<N>>
 inline T max(const VectorN<T, N> &p)
 { return op_impl_rdc<T, N>(p, [] (T x, T y) { return std::max(x, y); }, p[0], Indices{}); }
@@ -283,13 +310,6 @@ inline VectorN<T, N> max(const VectorN<T, N> &a, const VectorN<T, N> &b)
 template <typename T, size_t N, typename Indices = std::make_index_sequence<N>>
 inline VectorN<T, N> min(const VectorN<T, N> &a, const VectorN<T, N> &b)
 { return op_impl_bop<T, N>(a, b, [] (T x, T y) { return std::min(x, y); }, Indices{}); }
-
-////////////////////////////////////////////////////////////////
-/// Nd vector extended Ops
-////////////////////////////////////////////////////////////////
-
-#include <cmath>
-#include <iostream>
 
 template <typename T, size_t N, typename Indices = std::make_index_sequence<N>>
 inline VectorN<T, N> abs(const VectorN<T, N> &p)
@@ -330,26 +350,6 @@ inline VectorN<T, N> normalize(const VectorN<T, N> &p)
 template <typename T, size_t N, typename Indices = std::make_index_sequence<N>>
 inline std::ostream &operator<<(std::ostream &os, const VectorN<T, N>& p)
 { os << "("; op_impl_out(os, p, ", ", Indices{}) << ")"; return os; }
-
-////////////////////////////////////////////////////////////////
-/// Nd vector ctors
-////////////////////////////////////////////////////////////////
-
-template <typename T, size_t N, typename Indices = std::make_index_sequence<N>>
-inline VectorN<T, N> make_vector(const T &s)
-{ return op_impl_set<T, N>(s, Indices{}); }
-
-template <typename T, size_t N, size_t M, typename Indices = std::make_index_sequence<N>>
-inline VectorN<T, N> make_vector(const VectorN<T, M> &p)
-{ return op_impl_set<T, N, M>(p, Indices{}); }
-
-template <typename T, size_t N, typename Indices = std::make_index_sequence<N>>
-inline VectorN<T, N> make_vector(const VectorN<T, N> &p, T (*fun)(T))
-{ return op_impl_uop<T, N>(p, fun, Indices{}); }
-
-template <typename T, size_t N, typename R, typename Indices = std::make_index_sequence<N>>
-inline VectorN<R, N> make_vector(const VectorN<T, N> &p, R (*fun)(T))
-{ return op_impl_uop<T, N, R>(p, fun, Indices{}); }
 
 ////////////////////////////////////////////////////////////////
 /// 3d vector Ops

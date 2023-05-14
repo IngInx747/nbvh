@@ -151,7 +151,7 @@ inline void Bvh<Primitive, T, N>::build(
     const PrimitiveSplit &split,
     const int threshold)
 {
-    if (primitives.empty()) return;
+    if (biter == eiter) return;
     mPrimitives.clear(); mNodes.emplace_back();
     std::copy(biter, eiter, std::back_inserter(mPrimitives));
     recursive_build(mPrimitives.begin(), mPrimitives.end(), 0, 0, bound, split, threshold);
