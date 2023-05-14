@@ -1,4 +1,5 @@
 # nbvh
+![CMake](https://github.com/IngInx747/nbvh/actions/workflows/.github/workflows/cmake.yml/badge.svg)
 
 `nbvh` short of N-dimensional Bvh, is an acceleration structure of spatial query operations that supports 2D, 3D or any other dimensions.
 
