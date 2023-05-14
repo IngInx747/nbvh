@@ -1,4 +1,5 @@
-project(test-bvh)
 file(GLOB SRCS "*.h" "*.hh" "*.hpp" "*.c" "*.cc" "*.cpp")
-add_executable(${PROJECT_NAME} ${SRCS})
-target_include_directories(${PROJECT_NAME} PRIVATE "${CMAKE_SOURCE_DIR}")
+
+add_executable(test-bvh ${SRCS})
+
+target_link_libraries(test-bvh PRIVATE ${PROJECT_NAME})
