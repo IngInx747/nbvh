@@ -189,6 +189,10 @@ inline VectorN<T, N> operator+(const VectorN<T, N> &p, const T &s)
 { return op_impl_add(p, s, Indices{}); }
 
 template <typename T, size_t N, typename Indices = std::make_index_sequence<N>>
+inline VectorN<T, N> operator+(const T &s, const VectorN<T, N> &p)
+{ return op_impl_add(p, s, Indices{}); }
+
+template <typename T, size_t N, typename Indices = std::make_index_sequence<N>>
 inline VectorN<T, N> operator-(const VectorN<T, N> &a, const VectorN<T, N> &b)
 { return op_impl_sub(a, b, Indices{}); }
 
@@ -197,11 +201,19 @@ inline VectorN<T, N> operator-(const VectorN<T, N> &p, const T &s)
 { return op_impl_sub(p, s, Indices{}); }
 
 template <typename T, size_t N, typename Indices = std::make_index_sequence<N>>
+inline VectorN<T, N> operator-(const T &s, const VectorN<T, N> &p)
+{ return op_impl_neg(op_impl_sub(p, s, Indices{}), Indices{}); }
+
+template <typename T, size_t N, typename Indices = std::make_index_sequence<N>>
 inline VectorN<T, N> operator*(const VectorN<T, N> &a, const VectorN<T, N> &b)
 { return op_impl_mul(a, b, Indices{}); }
 
 template <typename T, size_t N, typename Indices = std::make_index_sequence<N>>
 inline VectorN<T, N> operator*(const VectorN<T, N> &p, const T &s)
+{ return op_impl_mul(p, s, Indices{}); }
+
+template <typename T, size_t N, typename Indices = std::make_index_sequence<N>>
+inline VectorN<T, N> operator*(const T &s, const VectorN<T, N> &p)
 { return op_impl_mul(p, s, Indices{}); }
 
 template <typename T, size_t N, typename Indices = std::make_index_sequence<N>>
@@ -221,8 +233,16 @@ inline VectorN<T, N> &operator+=(VectorN<T, N> &a, const VectorN<T, N> &b)
 { a = a + b; return a; }
 
 template <typename T, size_t N>
+inline VectorN<T, N> &operator+=(VectorN<T, N> &p, const T &s)
+{ p = p + s; return p; }
+
+template <typename T, size_t N>
 inline VectorN<T, N> &operator-=(VectorN<T, N> &a, const VectorN<T, N> &b)
 { a = a - b; return a; }
+
+template <typename T, size_t N>
+inline VectorN<T, N> &operator-=(VectorN<T, N> &p, const T &s)
+{ p = p - s; return p; }
 
 template <typename T, size_t N>
 inline VectorN<T, N> &operator*=(VectorN<T, N> &p, const T &s)

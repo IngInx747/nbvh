@@ -355,6 +355,9 @@ SAHSplit<Primitive, PrimitiveBound, T, N>::operator()(
         cbox = merge(cbox, bound(*iter));
     const auto dim = longest_axis(cbox);
 
+    // degenerated bbox, stop splitting
+    if (!is_valid(cbox, true)) return biter;
+
     std::vector<Aabb<T, N>> boxes(nBuckets, make_aabb<T, N>());
     std::vector<int> counts(nBuckets, 0);
 
