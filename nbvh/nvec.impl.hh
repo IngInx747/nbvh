@@ -286,6 +286,7 @@ inline T dot(const VectorN<T, N> &a, const VectorN<T, N> &b)
 
 #include <cmath>
 #include <iostream>
+#include <algorithm>
 
 template <typename T, size_t N, typename Indices = std::make_index_sequence<N>>
 inline T max(const VectorN<T, N> &p)

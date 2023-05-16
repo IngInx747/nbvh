@@ -45,7 +45,7 @@ struct VectorN
     operator const T *() const { return &v[0]; }
     operator T *() { return &v[0]; }
 
-    T v[N] {0};
+    T v[N];
 };
 
 #endif // N_DIMENSIONAL_VECTOR_HH
