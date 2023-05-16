@@ -48,7 +48,7 @@ bvh.build(data.begin(), data.end(), bound, split, 1);
 If memory is a concern and time of building is considerable, try using coarser settings.
 
 ```cpp
-const int threshold = 100; // stop splitting if primitives per node is fewer than this number
+const int threshold = 100; // stop splitting if primitives per node are fewer than this number
 bvh.build(data.begin(), data.end(), bound, split, threshold);
 ```
 
