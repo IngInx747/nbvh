@@ -43,11 +43,11 @@ struct VectorN
 
     static constexpr size_t size() noexcept { return N; }
 
-    const T &operator[](size_t i) const { return v[i]; }
-    T &operator[](size_t i) { return v[i]; }
+    inline const T &operator[](size_t i) const { return v[i]; }
+    inline T &operator[](size_t i) { return v[i]; }
 
-    operator const T *() const { return &v[0]; }
-    operator T *() { return &v[0]; }
+    inline operator const T *() const { return &v[0]; }
+    inline operator T *() { return &v[0]; }
 
     T v[N];
 };

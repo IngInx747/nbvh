@@ -36,8 +36,8 @@ struct Aabb
     typedef T value_type;
     typedef VectorN<T, N> type;
 
-    const VectorN<T, N> &operator[](size_t i) const { return p[i]; }
-    VectorN<T, N> &operator[](size_t i) { return p[i]; }
+    inline const VectorN<T, N> &operator[](size_t i) const { return p[i]; }
+    inline VectorN<T, N> &operator[](size_t i) { return p[i]; }
 
     VectorN<T, N> p[2]; // p_min, p_max
 };
