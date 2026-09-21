@@ -195,15 +195,15 @@ inline Aabb<T, N> make_aabb(const VectorN<T, N> &v, const VectorN<R, N> &... vs)
 
 template <class BoxT>
 inline BoxT make_aabb()
-{ return make_aabb<BoxT::value_type, BoxT::dimension()>(); }
+{ return make_aabb<typename BoxT::value_type, BoxT::dimension()>(); }
 
 template <class BoxT, class VecT>
 inline BoxT make_aabb(const VecT &v)
-{ return make_aabb<BoxT::value_type, BoxT::dimension()>(v); }
+{ return make_aabb<typename BoxT::value_type, BoxT::dimension()>(v); }
 
 template <class BoxT, class VecT, class ...Vecs>
 inline BoxT make_aabb(const VecT &v, const Vecs &... vs)
-{ return make_aabb<BoxT::value_type, BoxT::dimension()>(v, vs...); }
+{ return make_aabb<typename BoxT::value_type, BoxT::dimension()>(v, vs...); }
 
 ////////////////////////////////////////////////////////////////
 /// 3D AABB property impls
