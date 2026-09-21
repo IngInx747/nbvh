@@ -21,8 +21,8 @@
 // WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.          //
 // ======================================================================== //
 
-#ifndef BOUNDING_VOLUME_HIERARCHY_HH
-#define BOUNDING_VOLUME_HIERARCHY_HH
+#ifndef NBVH_HH
+#define NBVH_HH
 
 #include <stack>
 #include <vector>
@@ -30,299 +30,125 @@
 #include "aabb.hh"
 
 ////////////////////////////////////////////////////////////////
-/// Bvh node
-////////////////////////////////////////////////////////////////
-
-/// When representing inner node, i0, i1 = index of left and right
-/// child nodes in the node array respectively;
-/// When representing leaf node, i0, i1 = beginning index of object
-/// in the primitive array and NEGATIVE number of objects.
-template <typename T, size_t N>
-struct BvhNode
-{
-    Aabb<T, N> b;
-    int i0 { 0 };
-    int i1 { 0 };
-};
-
-template <typename T, size_t N>
-inline int &left_child(BvhNode<T, N> &node)
-{ return node.i0; }
-
-template <typename T, size_t N>
-inline const int &left_child(const BvhNode<T, N> &node)
-{ return node.i0; }
-
-template <typename T, size_t N>
-inline int &right_child(BvhNode<T, N> &node)
-{ return node.i1; }
-
-template <typename T, size_t N>
-inline const int &right_child(const BvhNode<T, N> &node)
-{ return node.i1; }
-
-template <typename T, size_t N>
-inline int &offset(BvhNode<T, N> &node)
-{ return node.i0; }
-
-template <typename T, size_t N>
-inline const int &offset(const BvhNode<T, N> &node)
-{ return node.i0; }
-
-template <typename T, size_t N>
-inline int &neglen(BvhNode<T, N> &node)
-{ return node.i1; }
-
-template <typename T, size_t N>
-inline const int &neglen(const BvhNode<T, N> &node)
-{ return node.i1; }
-
-template <typename T, size_t N>
-inline int length(const BvhNode<T, N> &node)
-{ return -node.i1; }
-
-template <typename T, size_t N>
-inline bool is_leaf(const BvhNode<T, N> &node)
-{ return neglen(node) < 0; }
-
-template <typename T, size_t N>
-inline void set_leaf(BvhNode<T, N> &node, int objIdx, int objNum)
-{ offset(node) = objIdx; neglen(node) = -objNum; }
-
-////////////////////////////////////////////////////////////////
 /// Bounding volume hierarchy
 ////////////////////////////////////////////////////////////////
 
-template <class Primitive, typename T, size_t N>
-class Bvh
+template <class BoxT, typename IndexT = int> class Bvh
 {
 public:
-    typedef T value_type;
+
+  typedef IndexT index_type;
 
 public:
-    template <class PrimitiveBound, class PrimitiveSplit>
-    inline void build( // primitives are moved
-        std::vector<Primitive> &primitives,
-        const PrimitiveBound &bound,
-        const PrimitiveSplit &split,
-        const int threshold = 1);
 
-    template <class PrimitiveBound, class PrimitiveSplit>
-    inline void build( // primitives are copied
-        typename std::vector<Primitive>::iterator biter,
-        typename std::vector<Primitive>::iterator eiter,
-        const PrimitiveBound &bound,
-        const PrimitiveSplit &split,
-        const int threshold = 1);
+  /// For inner nodes, i_{0,1} = index of left and right children;
+  /// for leaf nodes, i_0 = offset to the base, i_1 = -|indices|.
+  struct Node
+  {
+    BoxT b {};
+    IndexT i[2] {};
 
-protected:
-    template <class PrimitiveBound, class PrimitiveSplit>
-    inline void recursive_build(
-        typename std::vector<Primitive>::iterator biter,
-        typename std::vector<Primitive>::iterator eiter,
-        const int current_node_id,
-        const int current_tree_depth,
-        const PrimitiveBound &bound,
-        const PrimitiveSplit &split,
-        const int threshold);
+    inline const auto &left()  const { return i[0]; }
+    inline const auto &right() const { return i[1]; }
+    inline auto &left()  { return i[0]; }
+    inline auto &right() { return i[1]; }
+    inline auto offset() const { return i[0]; }
+    inline auto length() const { return-i[1]; }
+    inline bool leaf() const { return i[1] < 0; }
+    inline void leaf(IndexT _i, IndexT _n) { i[0] = _i; i[1] = -_n; }
+  };
 
 public:
-    template <class PrimitiveCollide>
-    inline bool intersect(
-        PrimitiveCollide &collide,
-        const VectorN<T, N> &org,
-        const VectorN<T, N> &dir,
-        T &dist) const;
 
-    template <class RangeQuery>
-    inline bool search(RangeQuery &range) const;
+  template <class BoundT, class SplitT, class Iter>
+  inline void build(
+    const BoundT &bound,
+    const SplitT &split,
+    const Iter &begin,
+    const Iter &end,
+    const IndexT threshold = 1);
 
-    inline std::vector<Primitive> &primitives() { return mPrimitives; }
-    inline const std::vector<Primitive> &primitives() const { return mPrimitives; }
+public:
 
-    inline std::vector<BvhNode<T, N>> &nodes() { return mNodes; }
-    inline const std::vector<BvhNode<T, N>> &nodes() const { return mNodes; }
+  inline bool empty() const
+  { return nodes_.empty(); }
 
-    inline Aabb<T, N> aabb() const { return mNodes.size() > 0 ? mNodes[0].b : make_aabb<T, N>(); }
-    inline bool is_empty() const { return mNodes.empty(); }
+  inline const auto &nodes() const
+  { return nodes_; }
+
+  inline void clear()
+  { nodes_.clear(); }
 
 protected:
-    std::vector<Primitive> mPrimitives;
-    std::vector<BvhNode<T, N>> mNodes;
+
+  std::vector<Node> nodes_;
 };
 
 ////////////////////////////////////////////////////////////////
 /// Bvh build
 ////////////////////////////////////////////////////////////////
 
-template <class Primitive, typename T, size_t N>
-template <class PrimitiveBound, class PrimitiveSplit>
-inline void Bvh<Primitive, T, N>::recursive_build(
-    typename std::vector<Primitive>::iterator biter,
-    typename std::vector<Primitive>::iterator eiter,
-    const int curr,  // current bvh node id
-    const int depth, // current tree depth
-    const PrimitiveBound &bound,
-    const PrimitiveSplit &split,
-    const int threshold)
+template <class BoxT, typename IndexT>
+template <class BoundT, class SplitT, class Iter>
+inline void Bvh<BoxT, IndexT>::build(
+  const BoundT &bound,
+  const SplitT &split,
+  const Iter &base,
+  const Iter &_end,
+  const IndexT threshold)
 {
-    const int n = static_cast<int>(std::distance(biter, eiter));
-    const int m = static_cast<int>(std::distance(mPrimitives.begin(), biter));
+  if (base == _end) return;
 
-    // Split primitives into left and right children nodes at splitting index
-    auto piter = eiter;
-    if (n > threshold) piter = split(mPrimitives, biter, eiter);
+  struct SE { Iter begin, end; IndexT id; };
+  std::stack<SE> se({SE { base, _end, 0 }});
+  nodes_.emplace_back();
 
-    // Make Bvh leaf node if:
-    // 1. #primitive is less than threshold, there is no need to split anymore;
-    // 2. split method failed to split primitives into 2 sets(which causes #primitive > threshold).
-    // To make #primitive per node strictly less than threshold, one needs a split method that
-    // will certainly perform a successful split, like EqualCount method.
-    if (piter == biter || piter == eiter)
+  while (!se.empty())
+  {
+    const auto entry = se.top(); se.pop();
+    const auto &begin = entry.begin;
+    const auto &end = entry.end;
+    auto &node = nodes_[entry.id];
+
+    // split current set into two subsets
+    const auto len = (IndexT)std::distance(begin, end);
+    const auto off = (IndexT)std::distance(base, begin);
+    auto pivot = end;
+    if (len > threshold)
+      pivot = split(begin, end);
+
+    // The node is leaf iff:
+    // 1. meets granularity;
+    // 2. trivial splitting.
+    if (pivot == begin || pivot == end)
     {
-        set_leaf(mNodes[curr], m, n);
-        auto bbox = make_aabb<T, N>();
-        for (auto iter = biter; iter != eiter; ++iter)
-            bbox = merge(bbox, bound(*iter));
-        mNodes[curr].b = bbox;
+      node.leaf(off, len);
+      node.b = bound(*begin);
+      for (auto it = begin + 1; it != end; ++it)
+        node.b |= bound(*it);
     }
-    else // Build Bvh recursively after splitting primitives
+    else // the node is inner
     {
-        mNodes[curr].b = make_aabb<T, N>();
-
-        int left = static_cast<int>(mNodes.size());
-        left_child(mNodes[curr]) = left;
-        mNodes.emplace_back();
-
-        recursive_build(biter, piter, left, depth + 1, bound, split, threshold);
-        mNodes[curr].b = merge(mNodes[curr].b, mNodes[left].b);
-
-        int right = static_cast<int>(mNodes.size());
-        right_child(mNodes[curr]) = right;
-        mNodes.emplace_back();
-
-        recursive_build(piter, eiter, right, depth + 1, bound, split, threshold);
-        mNodes[curr].b = merge(mNodes[curr].b, mNodes[right].b);
+      const auto left = (IndexT)nodes_.size();
+      const auto right = left + 1;
+      node.left()  = left;
+      node.right() = right;
+      nodes_.emplace_back();
+      nodes_.emplace_back();
+      se.push({ pivot, end,  right });
+      se.push({ begin, pivot, left });
     }
-}
+  }
 
-template <class Primitive, typename T, size_t N>
-template <class PrimitiveBound, class PrimitiveSplit>
-inline void Bvh<Primitive, T, N>::build(
-    std::vector<Primitive> &primitives,
-    const PrimitiveBound &bound,
-    const PrimitiveSplit &split,
-    const int threshold)
-{
-    if (primitives.empty()) return;
-    std::swap(primitives, mPrimitives); mNodes.emplace_back();
-    recursive_build(mPrimitives.begin(), mPrimitives.end(), 0, 0, bound, split, threshold);
-}
-
-template <class Primitive, typename T, size_t N>
-template <class PrimitiveBound, class PrimitiveSplit>
-inline void Bvh<Primitive, T, N>::build(
-    typename std::vector<Primitive>::iterator biter,
-    typename std::vector<Primitive>::iterator eiter,
-    const PrimitiveBound &bound,
-    const PrimitiveSplit &split,
-    const int threshold)
-{
-    if (biter == eiter) return;
-    mPrimitives.clear(); mNodes.emplace_back();
-    std::copy(biter, eiter, std::back_inserter(mPrimitives));
-    recursive_build(mPrimitives.begin(), mPrimitives.end(), 0, 0, bound, split, threshold);
-}
-
-////////////////////////////////////////////////////////////////
-/// Bvh query
-////////////////////////////////////////////////////////////////
-
-template <class Primitive, typename T, size_t N>
-template <class RangeQuery>
-inline bool Bvh<Primitive, T, N>::search(RangeQuery &query) const
-{
-    if (mNodes.empty()) return false;
-
-    bool hit { false };
-    std::stack<int> recursive({ 0 });
-
-    while (!recursive.empty())
-    {
-        int curr = recursive.top(); recursive.pop();
-        const auto &node = mNodes[curr]; // safe reference
-
-        if (query(node.b))
-        {
-            if (is_leaf(node))
-            {
-                int ib = offset(node);
-                int ie = ib + length(node);
-                for (int i = ib; i < ie; ++i)
-                    if (query(mPrimitives[i]))
-                        hit = true;
-            }
-            else
-            {
-                recursive.push(right_child(node));
-                recursive.push(left_child(node));
-            }
-        }
-    }
-
-    return hit;
-}
-
-template <class Primitive, typename T, size_t N>
-template <class PrimitiveCollide>
-inline bool Bvh<Primitive, T, N>::intersect(
-    PrimitiveCollide &collide,
-    const VectorN<T, N> &org,
-    const VectorN<T, N> &dir,
-    T &dist) const
-{
-    if (mNodes.empty()) return false;
-
-    const auto neg = make_vector<T, N, bool>(dir, [] (T x) { return x < 0; });
-    const auto inv = make_vector<T, N>(1) / dir;
-
-    bool hit { false };
-    std::stack<int> recursive({ 0 });
-
-    while (!recursive.empty())
-    {
-        int curr = recursive.top(); recursive.pop();
-        const auto &node = mNodes[curr]; // safe reference
-
-        if (is_intersecting(node.b, org, inv, dist, true))
-        {
-            if (is_leaf(node))
-            {
-                int ib = offset(node);
-                int ie = ib + length(node);
-                for (int i = ib; i < ie; ++i)
-                    if (collide(mPrimitives[i], org, dir, dist))
-                        hit = true;
-            }
-            else
-            {
-                const auto dim = longest_axis(node.b);
-
-                if (neg[dim])
-                {
-                    recursive.push(left_child(node));
-                    recursive.push(right_child(node));
-                }
-                else
-                {
-                    recursive.push(right_child(node));
-                    recursive.push(left_child(node));
-                }
-            }
-        }
-    }
-
-    return hit;
+  // Build bounding box of inner nodes.
+  // Assume parent_index < child_index:
+  // node.left > i and node.right > i,
+  // so their boxes have been computed.
+  for (IndexT i = (IndexT)nodes_.size() - 1; i >= 0; --i)
+  {
+    auto &node = nodes_[i]; if (node.leaf()) continue;
+    node.b = nodes_[node.left()].b | nodes_[node.right()].b;
+  }
 }
 
 ////////////////////////////////////////////////////////////////
@@ -331,250 +157,294 @@ inline bool Bvh<Primitive, T, N>::intersect(
 
 /// Split Method: EqualCounts
 /// Partition primitives into equally-sized subsets
-template<class Primitive, class PrimitiveBound, typename T, size_t N>
-struct EqualCountsSplit
+template <class BoundT, class BoxT, class Iter> struct EqualCountSplit
 {
-    EqualCountsSplit(const PrimitiveBound &bound): bound(bound) {}
-    inline typename std::vector<Primitive>::iterator operator() (
-        std::vector<Primitive> &primitives,
-        typename std::vector<Primitive>::iterator biter,
-        typename std::vector<Primitive>::iterator eiter) const;
-    const PrimitiveBound &bound;
+  EqualCountSplit(const BoundT &_bound): bound_(_bound) {}
+
+  inline Iter operator()(const Iter&, const Iter&) const;
+
+  const BoundT &bound_;
 };
 
-template<class Primitive, class PrimitiveBound, typename T, size_t N>
-inline typename std::vector<Primitive>::iterator
-EqualCountsSplit<Primitive, PrimitiveBound, T, N>::operator()(
-    std::vector<Primitive> &primitives,
-    typename std::vector<Primitive>::iterator biter,
-    typename std::vector<Primitive>::iterator eiter) const
+template <class BoundT, class BoxT, class Iter>
+inline Iter EqualCountSplit<BoundT, BoxT, Iter>::operator()(const Iter &begin, const Iter &end) const
 {
-    auto cbox = make_aabb<T, N>(); // centroid bounding box
-    for (auto iter = biter; iter != eiter; ++iter)
-        cbox = merge(cbox, bound(*iter));
-    const auto dim = longest_axis(cbox);
+  auto bc = bound_(*begin); // centroid box
+  for (auto it = begin + 1; it != end; ++it)
+    bc |= bound_(*it);
 
-    const auto n = std::distance(biter, eiter);
-    auto piter = biter + n / 2;
+  const auto axis = longest_axis(bc);
+  const auto pivot = begin + std::distance(begin, end)/2;
 
-    std::nth_element(biter, piter, eiter, [&](const Primitive &a, const Primitive &b)
-    { return centroid(bound(a))[dim] < centroid(bound(b))[dim]; });
+  std::nth_element(begin, pivot, end, [&](const auto &a, const auto &b)
+  { return centroid(bound_(a))[axis] < centroid(bound_(b))[axis]; });
 
-    return piter;
+  return pivot;
 }
 
 /// Split Method: MiddlePoint
 /// Partition primitives through node's midpoint
-template<class Primitive, class PrimitiveBound, typename T, size_t N>
-struct MiddlePointSplit
+template <class BoundT, class BoxT, class Iter> struct MiddlePointSplit
 {
-    MiddlePointSplit(const PrimitiveBound &bound) : bound(bound) {}
-    inline typename std::vector<Primitive>::iterator operator() (
-        std::vector<Primitive> &primitives,
-        typename std::vector<Primitive>::iterator biter,
-        typename std::vector<Primitive>::iterator eiter) const;
-    const PrimitiveBound &bound;
+  MiddlePointSplit(const BoundT &_bound): bound_(_bound) {}
+
+  inline Iter operator()(const Iter&, const Iter&) const;
+
+  const BoundT &bound_;
 };
 
-template<class Primitive, class PrimitiveBound, typename T, size_t N>
-inline typename std::vector<Primitive>::iterator
-MiddlePointSplit<Primitive, PrimitiveBound, T, N>::operator()(
-    std::vector<Primitive> &primitives,
-    typename std::vector<Primitive>::iterator biter,
-    typename std::vector<Primitive>::iterator eiter) const
+template <class BoundT, class BoxT, class Iter>
+inline Iter MiddlePointSplit<BoundT, BoxT, Iter>::operator()(const Iter &begin, const Iter &end) const
 {
-    auto cbox = make_aabb<T, N>(); // centroid bounding box
-    for (auto iter = biter; iter != eiter; ++iter)
-        cbox = merge(cbox, bound(*iter));
-    const auto dim = longest_axis(cbox);
+  auto bc = bound_(*begin); // centroid box
+  for (auto it = begin + 1; it != end; ++it)
+    bc |= bound_(*it);
 
-    T mid = (cbox[0][dim] + cbox[1][dim]) * (T)(0.5);
+  const auto axis = longest_axis(bc);
+  const auto mv = centroid(bc)[axis];
 
-    auto miter = std::partition(biter, eiter, [&](const Primitive &p)
-    { return centroid(bound(p))[dim] < mid; });
+  const auto pivot = std::partition(begin, end, [&](const auto &val)
+  { return centroid(bound_(val))[axis] < mv; });
 
-    // use EqualCount if split failed
-    if (miter == biter || miter == eiter)
-    {
-        const auto n = std::distance(biter, eiter);
-        auto piter = biter + n / 2;
-        std::nth_element(biter, piter, eiter, [&](const Primitive &a, const Primitive &b)
-        { return centroid(bound(a))[dim] < centroid(bound(b))[dim]; });
-        return piter;
-    }
+  if (pivot == begin || pivot == end) // fallback to EqualCount
+  {
+    pivot = begin + std::distance(begin, end)/2;
+    std::nth_element(begin, pivot, end, [&](const auto &a, const auto &b)
+    { return centroid(bound_(a))[axis] < centroid(bound_(b))[axis]; });
+  }
 
-    return miter;
+  return pivot;
 }
 
 /// Split Method: SAH
 /// Partition primitives via surface area heuristic
-template<class Primitive, class PrimitiveBound, typename T, size_t N>
-struct SAHSplit
+template <class BoundT, class BoxT, class Iter> struct SAHSplit
 {
-    SAHSplit(const PrimitiveBound &bound) : bound(bound) {}
-    inline typename std::vector<Primitive>::iterator operator() (
-        std::vector<Primitive> &primitives,
-        typename std::vector<Primitive>::iterator biter,
-        typename std::vector<Primitive>::iterator eiter) const;
-    const PrimitiveBound &bound;
-    int nBuckets { 16 };
+  typedef typename std::iterator_traits<Iter>::value_type value_type;
+
+  SAHSplit(const BoundT &_bound): bound_(_bound) {}
+
+  inline Iter operator()(const Iter &_begin, const Iter &_end) const;
+
+  const BoundT &bound_;
+  size_t bsize_ { 16 };
 };
 
-template<class Primitive, class PrimitiveBound, typename T, size_t N>
-inline typename std::vector<Primitive>::iterator
-SAHSplit<Primitive, PrimitiveBound, T, N>::operator()(
-    std::vector<Primitive> &primitives,
-    typename std::vector<Primitive>::iterator biter,
-    typename std::vector<Primitive>::iterator eiter) const
+template <class BoundT, class BoxT, class Iter>
+inline Iter SAHSplit<BoundT, BoxT, Iter>::operator()(const Iter &begin, const Iter &end) const
 {
-    auto cbox = make_aabb<T, N>(); // centroid bounding box
-    for (auto iter = biter; iter != eiter; ++iter)
-        cbox = merge(cbox, bound(*iter));
-    const auto dim = longest_axis(cbox);
+  auto bc = bound_(*begin); // centroid box
+  for (auto it = begin + 1; it != end; ++it)
+    bc |= bound_(*it);
 
-    // degenerated bbox, stop splitting
-    if (!is_valid(cbox, true)) return biter;
+  // degenerated bbox, stop splitting
+  if (!valid(bc, bool {})) return begin;
 
-    std::vector<Aabb<T, N>> boxes(nBuckets, make_aabb<T, N>());
-    std::vector<int> counts(nBuckets, 0);
+  const auto axis = longest_axis(bc);
+  const auto inv = 1/diagonal(bc)[axis];
 
-    for (auto iter = biter; iter != eiter; ++iter)
+  std::vector<BoxT> bs(bsize_, make_aabb<BoxT>());
+  std::vector<size_t> counts(bsize_, 0);
+
+  for (auto it = begin; it != end; ++it)
+  {
+    const auto d = centroid(bound_(*it)) - bc[0];
+    size_t k = (size_t)(bsize_*(d[axis]*inv));
+    if (k >= bsize_) k = bsize_ - 1;
+    bs[k] |= bound_(*it);
+    ++counts[k];
+  }
+
+  // the cost of splitting buckets into [0, b] and [b+1, :]
+  auto minc = std::numeric_limits<decltype(inv)>::max();
+  size_t arcminc = 0; // the bucket id to split
+
+  // find bucket id that minimizes SAH metric
+  for (size_t k = 0; k < bsize_ - 1; ++k)
+  {
+    auto b0 = bs[0], b1 = bs[k + 1];
+    size_t count0 {}, count1 {};
+
+    for (size_t i = 0; i <= k; ++i)
     {
-        auto offset = (centroid(bound(*iter)) - cbox[0]) / diagonal(cbox);
-        int b = static_cast<int>(nBuckets * offset[dim]);
-        if (b == nBuckets) b = nBuckets - 1;
-        boxes[b] = merge(boxes[b], bound(*iter));
-        ++counts[b];
+      b0 |= bs[i];
+      count0 += counts[i];
+    }
+    for (size_t i = k + 1; i < bsize_; ++i)
+    {
+      b1 |= bs[i];
+      count1 += counts[i];
     }
 
-    // cost of splitting [0,b] and [b+1, nB-1]
-    T minCost = std::numeric_limits<T>::max();
-    int splitBucketId = 0;
+    const auto cost = area(b0)*count0 + area(b1)*count1;
+    if (minc > cost) { minc = cost; arcminc = k; }
+  }
 
-    for (int b = 0; b < nBuckets - 1; ++b)
+  // split at the position of minimum cost
+  auto pivot = std::partition(begin, end, [&](const auto &val)
+  {
+    const auto d = centroid(bound_(val)) - bc[0];
+    size_t k = (size_t)(bsize_*(d[axis]*inv));
+    if (k >= bsize_) k = bsize_ - 1;
+    return k <= arcminc;
+  });
+
+  if (pivot == begin || pivot == end) // fallback to EqualCount
+  {
+    pivot = begin + std::distance(begin, end)/2;
+    std::nth_element(begin, pivot, end, [&](const auto &a, const auto &b)
+    { return centroid(bound_(a))[axis] < centroid(bound_(b))[axis]; });
+  }
+
+  return pivot;
+}
+
+////////////////////////////////////////////////////////////////
+/// Bvh queries
+////////////////////////////////////////////////////////////////
+
+template <class BvhT, class PredicateT, class Iter>
+inline bool query(
+  const BvhT &bvh,
+  PredicateT &pred,
+  const Iter &base)
+{
+  const auto &nodes = bvh.nodes();
+  if (nodes.empty()) return false;
+
+  bool hit {};
+  std::stack<typename BvhT::index_type> si({ 0 });
+
+  while (!si.empty())
+  {
+    const auto curr = si.top(); si.pop();
+    const auto &node = nodes[curr];
+
+    if (pred(node.b))
     {
-        Aabb<T, N> bbox0 = make_aabb<T, N>(), bbox1 = make_aabb<T, N>();
-        int count0{}, count1{};
-
-        for (int i = 0; i <= b; ++i)
-        {
-            bbox0 = merge(bbox0, boxes[i]);
-            count0 += counts[i];
-        }
-
-        for (int i = b + 1; i < nBuckets; ++i)
-        {
-            bbox1 = merge(bbox1, boxes[i]);
-            count1 += counts[i];
-        }
-
-        T cost = area(bbox0) * count0 + area(bbox1) * count1;
-
-        // find bucket id that minimizes SAH metric
-        if (minCost > cost)
-        {
-            minCost = cost;
-            splitBucketId = b;
-        }
+      if (node.leaf())
+      {
+        const auto ib = node.offset();
+        const auto ie = ib + node.length();
+        for (auto i = ib; i < ie; ++i)
+          if (pred(*(base + i)))
+            hit = true;
+      }
+      else
+      {
+        si.push(node.right());
+        si.push(node.left());
+      }
     }
+  }
 
-    // split according to the SAH result
-    auto siter = std::partition(biter, eiter, [&](const Primitive &p)
-    {
-        auto offset = (centroid(bound(p)) - cbox[0]) / diagonal(cbox);
-        int b = static_cast<int>(nBuckets * offset[dim]);
-        if (b == nBuckets) b = nBuckets - 1;
-        return b <= splitBucketId;
-    });
+  return hit;
+}
 
-    // use EqualCount if split failed
-    if (siter == biter || siter == eiter)
+template <class BvhT, class CollideT, class VecT, typename DistanceT, class Iter>
+inline bool intersect(
+  const BvhT &bvh,
+  CollideT &colli,
+  const VecT &org,
+  const VecT &dir,
+  DistanceT &dist,
+  const Iter &base)
+{
+  const auto &nodes = bvh.nodes();
+  if (nodes.empty()) return false;
+
+  bool hit {};
+  std::stack<typename BvhT::index_type> si({ 0 });
+
+  while (!si.empty())
+  {
+    const auto curr = si.top(); si.pop();
+    const auto &node = nodes[curr];
+
+    if (colli(node.b, org, dir, dist))
     {
-        const auto n = std::distance(biter, eiter);
-        auto piter = biter + n / 2;
-        std::nth_element(biter, piter, eiter, [&](const Primitive &a, const Primitive &b)
-        { return centroid(bound(a))[dim] < centroid(bound(b))[dim]; });
-        return piter;
+      if (node.leaf())
+      {
+        const auto ib = node.offset();
+        const auto ie = ib + node.length();
+        for (auto i = ib; i < ie; ++i)
+          if (colli(*(base + i), org, dir, dist))
+            hit = true;
+      }
+      else
+      {
+        const auto axis = longest_axis(node.b);
+
+        if (dir[axis] < 0)
+        {
+          si.push(node.left());
+          si.push(node.right());
+        }
+        else
+        {
+          si.push(node.right());
+          si.push(node.left());
+        }
+      }
     }
+  }
 
-    return siter;
+  return hit;
 }
 
 ////////////////////////////////////////////////////////////////
 /// Bvh definition example
 ////////////////////////////////////////////////////////////////
 
-/// Bound Program Interfaces:
+/// Bounding box Interfaces:
 /// 
-/// struct PrimitiveBound
+/// struct Bound
 /// {
-///     Aabb operator() (const Primitive &primitive);
-///     ...
+///   Aabb operator() (const Value &);
+///   ...
 /// };
 /// 
 
-/// Split Program Interfaces:
+/// Spatial query Interfaces:
 /// 
-/// struct PrimitiveSplit
+/// struct Predicate
 /// {
-///     using Iter = typename std::vector<Primitive>::iterator;
-///     Iter operator() (std::vector<Primitive> &primitives, Iter biter, Iter eiter) const;
-///     ...
-/// };
-/// 
-/// Some built-in implementations are provided.
-/// 
-
-/// Query Program Interfaces:
-/// 
-/// struct RangeQuery
-/// {
-///     bool operator() (const Aabb &Aabb); // rough query
-///     bool operator() (const Primitive &primitive); // fine query
-///     ...
+///   bool operator() (const Box &);
+///   bool operator() (const Value &);
+///   ...
 /// };
 /// 
 
-/// Collide Program Interfaces:
+/// Ray-trace Interfaces:
 /// 
-/// struct PrimitiveCollide
+/// struct Collide
 /// {
-///     bool operator() (const Primitive &primitive,
-///                      const VectorN<T, N> &org,
-///                      const VectorN<T, N> &dir,
-///                      T &dist);
-///     ...
+///   bool operator() (const Box &,
+///                    const Vec &org,
+///                    const Vec &dir,
+///                    Distance &dist);
+///
+///   bool operator() (const Value &,
+///                    const Vec &org,
+///                    const Vec &dir,
+///                    Distance &dist);
+///   ...
 /// };
 /// 
 
 ////////////////////////////////////////////////////////////////
-/// Bvh construction example
+/// Bvh building example
 ////////////////////////////////////////////////////////////////
 
-/// template<class Primitive, class PrimitiveBound, typename T, size_t N>
+/// template <class BoundT, class BoxT, class Iter>
 /// void build_bvh_with_SAH_method(
-///     Bvh<Primitive, T, N> &bvh,
-///     const std::vector<Primitive> &primitives,
-///     const PrimitiveBound &bound,
-///     int threshold)
+///   Bvh<BoxT> &bvh,
+///   const BoundT &bound,
+///   Iter begin,
+///   Iter end)
 /// {
-///     SAHSplit<Primitive, PrimitiveBound, T, N> split(bound);
-///     bvh.build<PrimitiveBound, decltype(split)>(
-///         primitives.begin(), primitives.end(),
-///         bound, split, threshold);
+///   SAHSplit<BoundT, BoxT, Iter> split(bound);
+///   bvh.build(bound, split, begin, end);
 /// }
 
-/// template<class Primitive, class PrimitiveBound, typename T, size_t N>
-/// void build_bvh_with_EC_method(
-///     Bvh<Primitive, T, N> &bvh,
-///     const std::vector<Primitive> &primitives,
-///     const PrimitiveBound &bound,
-///     int threshold)
-/// {
-///     EqualCountsSplit<Primitive, PrimitiveBound, T, N> split(bound);
-///     bvh.build<PrimitiveBound, decltype(split)>(
-///         primitives.begin(), primitives.end(),
-///         bound, split, threshold);
-/// }
-
-#endif // !BOUNDING_VOLUME_HIERARCHY_HH
+#endif // !NBVH_HH

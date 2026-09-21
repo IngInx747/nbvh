@@ -1,45 +1,24 @@
-// ======================================================================== //
-// Copyright (c) 2022 Ingram Inxent                                         //
-//                                                                          //
-// Permission is hereby granted, free of charge, to any person obtaining    //
-// a copy of this software and associated documentation files (the          //
-// "Software"), to deal in the Software without restriction, including      //
-// without limitation the rights to use, copy, modify, merge, publish,      //
-// distribute, sublicense, and/or sell copies of the Software, and to       //
-// permit persons to whom the Software is furnished to do so, subject to    //
-// the following conditions:                                                //
-//                                                                          //
-// The above copyright notice and this permission notice shall be           //
-// included in all copies or substantial portions of the Software.          //
-//                                                                          //
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,          //
-// EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF       //
-// MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND                    //
-// NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE   //
-// LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION   //
-// OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION    //
-// WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.          //
-// ======================================================================== //
+#ifndef NBVH_AABB_HH
+#define NBVH_AABB_HH
 
-#ifndef AXIS_ALIGNED_BOUNDING_BOX_HH
-#define AXIS_ALIGNED_BOUNDING_BOX_HH
-
+#include <limits>
 #include "nvec.hh"
 
 ////////////////////////////////////////////////////////////////
 /// Axis-aligned Bounding Box
 ////////////////////////////////////////////////////////////////
 
-template <typename T, size_t N>
-struct Aabb
+template <typename T, size_t N> struct Aabb
 {
-    typedef T value_type;
-    typedef VectorN<T, N> type;
+  typedef VectorN<T, N> vector_type;
+  typedef T value_type;
 
-    inline const VectorN<T, N> &operator[](size_t i) const { return p[i]; }
-    inline VectorN<T, N> &operator[](size_t i) { return p[i]; }
+  static constexpr size_t dimension() noexcept { return N; }
 
-    VectorN<T, N> p[2]; // p_min, p_max
+  inline const vector_type &operator[](size_t i) const { return v_[i]; }
+  inline vector_type &operator[](size_t i) { return v_[i]; }
+
+  vector_type v_[2];
 };
 
 ////////////////////////////////////////////////////////////////
@@ -67,36 +46,36 @@ inline VectorN<T, N> min(const VectorN<T, N> &a, const VectorN<T, N> &b, const V
 ////////////////////////////////////////////////////////////////
 
 template <typename T, size_t N>
-inline bool is_valid(const Aabb<T, N> &b)
+inline bool valid(const Aabb<T, N> &b)
 { return b[0] <= b[1]; }
 
 template <typename T, size_t N>
-inline bool is_valid(const Aabb<T, N> &b, bool _)
+inline bool valid(const Aabb<T, N> &b, bool)
 { return b[0] < b[1]; }
 
 template <typename T, size_t N>
-inline bool is_inside(const Aabb<T, N> &b, const VectorN<T, N> &v)
+inline bool inside(const Aabb<T, N> &b, const VectorN<T, N> &v)
 { return b[0] <= v && v <= b[1]; }
 
 template <typename T, size_t N>
-inline bool is_inside(const Aabb<T, N> &b, const VectorN<T, N> &v, bool _)
+inline bool inside(const Aabb<T, N> &b, const VectorN<T, N> &v, bool)
 { return b[0] < v && v < b[1]; }
 
 template <typename T, size_t N>
-inline bool is_inside(const Aabb<T, N> &b_I, const Aabb<T, N> &b_i)
-{ return b_I[0] <= b_i[0] && b_i[1] <= b_I[1]; }
+inline bool inside(const Aabb<T, N> &B, const Aabb<T, N> &b)
+{ return B[0] <= b[0] && b[1] <= B[1]; }
 
 template <typename T, size_t N>
-inline bool is_inside(const Aabb<T, N> &b_I, const Aabb<T, N> &b_i, bool _)
-{ return b_I[0] < b_i[0] && b_i[1] < b_I[1]; }
+inline bool inside(const Aabb<T, N> &B, const Aabb<T, N> &b, bool)
+{ return B[0] < b[0] && b[1] < B[1]; }
 
 template <typename T, size_t N>
-inline bool is_intersecting(const Aabb<T, N> &b_0, const Aabb<T, N> &b_1)
-{ return b_0[0] <= b_1[1] && b_1[0] <= b_0[1]; }
+inline bool intersecting(const Aabb<T, N> &b0, const Aabb<T, N> &b1)
+{ return b0[0] <= b1[1] && b1[0] <= b0[1]; }
 
 template <typename T, size_t N>
-inline bool is_intersecting(const Aabb<T, N> &b_0, const Aabb<T, N> &b_1, bool _)
-{ return b_0[0] < b_1[1] && b_1[0] < b_0[1]; }
+inline bool intersecting(const Aabb<T, N> &b0, const Aabb<T, N> &b1, bool)
+{ return b0[0] < b1[1] && b1[0] < b0[1]; }
 
 // * If we can rely on the IEEE 754 floating-point properties,
 // this also implicitly handles the edge case where a component
@@ -110,23 +89,31 @@ inline bool is_intersecting(const Aabb<T, N> &b_0, const Aabb<T, N> &b_1, bool _
 // update distance.
 
 template <typename T, size_t N>
-inline bool is_intersecting(const Aabb<T, N> &b, const VectorN<T, N> &org, const VectorN<T, N> &dir, const T &dist)
+inline bool intersecting(
+  const Aabb<T, N> &b,
+  const VectorN<T, N> &org,
+  const VectorN<T, N> &dir,
+  const T &dist)
 {
-    const VectorN<T, N> k0 = (b[0] - org) / dir;
-    const VectorN<T, N> k1 = (b[1] - org) / dir;
-    const T t0 = max(min(k0, k1));
-    const T t1 = min(max(k0, k1));
-    return t1 > 0 && t1 >= t0 && dist > t0;
+  const auto k0 = (b[0] - org)/dir;
+  const auto k1 = (b[1] - org)/dir;
+  const auto t0 = max(min(k0, k1));
+  const auto t1 = min(max(k0, k1));
+  return t1 > 0 && t1 >= t0 && dist > t0;
 }
 
 template <typename T, size_t N>
-inline bool is_intersecting(const Aabb<T, N> &b, const VectorN<T, N> &org, const VectorN<T, N> &inv, const T &dist, bool _)
+inline bool intersecting(
+  const Aabb<T, N> &b,
+  const VectorN<T, N> &org,
+  const VectorN<T, N> &inv,
+  const T &dist, bool)
 {
-    const VectorN<T, N> k0 = (b[0] - org) * inv;
-    const VectorN<T, N> k1 = (b[1] - org) * inv;
-    const T t0 = max(min(k0, k1));
-    const T t1 = min(max(k0, k1));
-    return t1 > 0 && t1 >= t0 && dist > t0;
+  const auto k0 = (b[0] - org)*inv;
+  const auto k1 = (b[1] - org)*inv;
+  const auto t0 = max(min(k0, k1));
+  const auto t1 = min(max(k0, k1));
+  return t1 > 0 && t1 >= t0 && dist > t0;
 }
 
 ////////////////////////////////////////////////////////////////
@@ -135,7 +122,7 @@ inline bool is_intersecting(const Aabb<T, N> &b, const VectorN<T, N> &org, const
 
 template <typename T, size_t N>
 inline VectorN<T, N> centroid(const Aabb<T, N> &b)
-{ return (b[0] + b[1]) * (T)(0.5); }
+{ return (b[0] + b[1])/(T)(2); }
 
 template <typename T, size_t N>
 inline VectorN<T, N> diagonal(const Aabb<T, N> &b)
@@ -155,29 +142,48 @@ inline size_t longest_axis(const Aabb<T, N> &b)
 
 template <typename T, size_t N, typename Indices = std::make_index_sequence<N>>
 inline T volume(const Aabb<T, N> &b)
-{ return op_impl_rdc<T, N>(diagonal(b), [] (T x, T y) { return x * y; }, (T)1, Indices{}); }
+{ return op_impl_rdc<T, N>(diagonal(b), [] (T x, T y) { return x*y; }, (T)1, Indices{}); }
 
 ////////////////////////////////////////////////////////////////
 /// AABB operation impls
 ////////////////////////////////////////////////////////////////
 
 template <typename T, size_t N>
-inline Aabb<T, N> merge(const Aabb<T, N> &b_0, const Aabb<T, N> &b_1)
-{ return { min(b_0[0], b_1[0]), max(b_0[1], b_1[1]) }; }
+inline Aabb<T, N> merge(const Aabb<T, N> &b0, const Aabb<T, N> &b1)
+{ return { min(b0[0], b1[0]), max(b0[1], b1[1]) }; }
 
 template <typename T, size_t N>
-inline Aabb<T, N> intersect(const Aabb<T, N> &b_0, const Aabb<T, N> &b_1)
-{ return { max(b_0[0], b_1[0]), min(b_0[1], b_1[1]) }; }
+inline Aabb<T, N> intersect(const Aabb<T, N> &b0, const Aabb<T, N> &b1)
+{ return { max(b0[0], b1[0]), min(b0[1], b1[1]) }; }
+
+template <typename T, size_t N>
+inline Aabb<T, N> operator|(const Aabb<T, N> &b0, const Aabb<T, N> &b1)
+{ return merge(b0, b1); }
+
+template <typename T, size_t N>
+inline Aabb<T, N> operator&(const Aabb<T, N> &b0, const Aabb<T, N> &b1)
+{ return intersect(b0, b1); }
+
+template <typename T, size_t N>
+inline Aabb<T, N> &operator|=(Aabb<T, N> &b0, const Aabb<T, N> &b1)
+{ b0 = merge(b0, b1); return b0; }
+
+template <typename T, size_t N>
+inline Aabb<T, N> &operator&=(Aabb<T, N> &b0, const Aabb<T, N> &b1)
+{ b0 = intersect(b0, b1); return b0; }
 
 ////////////////////////////////////////////////////////////////
 /// AABB ctors
 ////////////////////////////////////////////////////////////////
 
-#include <limits>
-
 template <typename T, size_t N>
 inline Aabb<T, N> make_aabb()
-{ return { make_vector<T, N>(+std::numeric_limits<T>::max()), make_vector<T, N>(-std::numeric_limits<T>::max()) }; }
+{
+  return {
+    make_vector<T, N>(+std::numeric_limits<T>::max()),
+    make_vector<T, N>(-std::numeric_limits<T>::max())
+  };
+}
 
 template <typename T, size_t N>
 inline Aabb<T, N> make_aabb(const VectorN<T, N> &v)
@@ -187,6 +193,18 @@ template <typename T, size_t N, typename... R>
 inline Aabb<T, N> make_aabb(const VectorN<T, N> &v, const VectorN<R, N> &... vs)
 { return { min(v, vs...), max(v, vs...) }; }
 
+template <class BoxT>
+inline BoxT make_aabb()
+{ return make_aabb<BoxT::value_type, BoxT::dimension()>(); }
+
+template <class BoxT, class VecT>
+inline BoxT make_aabb(const VecT &v)
+{ return make_aabb<BoxT::value_type, BoxT::dimension()>(v); }
+
+template <class BoxT, class VecT, class ...Vecs>
+inline BoxT make_aabb(const VecT &v, const Vecs &... vs)
+{ return make_aabb<BoxT::value_type, BoxT::dimension()>(v, vs...); }
+
 ////////////////////////////////////////////////////////////////
 /// 3D AABB property impls
 ////////////////////////////////////////////////////////////////
@@ -194,8 +212,8 @@ inline Aabb<T, N> make_aabb(const VectorN<T, N> &v, const VectorN<R, N> &... vs)
 template <typename T>
 inline T area(const Aabb<T, 3> &b)
 {
-    VectorN<T, 3> d = diagonal(b);
-    return (d[0] * d[1] + d[0] * d[2] + d[1] * d[2]) * (T)2;
+  const auto d = diagonal(b);
+  return (d[0]*d[1] + d[0]*d[2] + d[1]*d[2])*(T)2;
 }
 
 ////////////////////////////////////////////////////////////////
@@ -205,8 +223,8 @@ inline T area(const Aabb<T, 3> &b)
 template <typename T>
 inline T area(const Aabb<T, 2> &b)
 {
-    VectorN<T, 2> d = diagonal(b);
-    return (d[0] + d[1]) * (T)2;
+  const auto d = diagonal(b);
+  return (d[0] + d[1])*(T)2;
 }
 
-#endif // !AXIS_ALIGNED_BOUNDING_BOX_HH
+#endif // !NBVH_AABB_HH
