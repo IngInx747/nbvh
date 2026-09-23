@@ -75,7 +75,7 @@ Query primitives by the predicate:
 ```cpp
 Predicate pred(/* some initializations */);
 
-if (bvh.query(pred))
+if (query(bvh, pred, data.begin()))
 { /* do something */ }
 ```
 
@@ -105,6 +105,6 @@ Collide collide(/* some initializations */);
 Vec3 org, dir;
 T dist = +inf;
 
-if (bvh.intersect(collide, org, dir, dist))
+if (intersect(bvh, collide, org, dir, dist, data.begin()))
 { /* do something */ }
 ```
