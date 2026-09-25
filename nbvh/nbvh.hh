@@ -27,7 +27,7 @@
 #include <stack>
 #include <vector>
 #include <algorithm>
-#include "aabb.hh"
+#include "nbox.hh"
 
 ////////////////////////////////////////////////////////////////
 /// Bounding volume hierarchy

@@ -1,7 +1,7 @@
 #include <sstream>
 #include <fstream>
 #include <iomanip>
-#include "bvh.hh"
+#include "nbvh.hh"
 
 using Vec3 = VectorN<double, 3>;
 using Int2 = VectorN<int, 2>;

@@ -1,4 +1,4 @@
-#include "aabb.hh"
+#include "nbox.hh"
 
 using Vec3 = VectorN<double, 3>;
 using Box3 = Aabb<double, 3>;

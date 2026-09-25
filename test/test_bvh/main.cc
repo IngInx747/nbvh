@@ -1,4 +1,4 @@
-#include "bvh.hh"
+#include "nbvh.hh"
 
 using Vec3 = VectorN<double, 3>;
 using Int3 = VectorN<int, 3>;
