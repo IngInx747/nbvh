@@ -238,11 +238,17 @@ int main(int argc, const char **argv)
   for (const auto &node : bvh.nodes())
     append(vo, fo, eo, node.b);
 
-  err = save_msh(
+  err = save_obj(
     (const double*)vo.data(), vo.size(),
     (const int*)   fo.data(), fo.size(),
     (const int*)   eo.data(), eo.size(),
-    (prefix + ".bvh.mesh").c_str());
+    (prefix + ".bvh.obj").c_str());
+
+  //err = save_msh(
+  //  (const double*)vo.data(), vo.size(),
+  //  (const int*)   fo.data(), fo.size(),
+  //  (const int*)   eo.data(), eo.size(),
+  //  (prefix + ".bvh.mesh").c_str());
 
   return 0;
 }
